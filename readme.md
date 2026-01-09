@@ -1,132 +1,198 @@
 # Atrion
 
-> The Reference Implementation of Conditioned Deterministic Orchestration
+> Conditioned Deterministic Orchestration — A Topological Physics Approach to Distributed Reliability
 
-## A Topological Physics Approach to Distributed Reliability
-
-* **Type:** Research Proposal & Proof of Concept (PoC)
-* **Domain:** Distributed Systems Engineering, Control Theory, Adaptive Systems
+[![Status](https://img.shields.io/badge/status-research-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
 
 ---
 
-## 1. Abstract
+## Abstract
 
-This repository contains the reference implementation and simulation environment for **Conditioned Deterministic Orchestration (CDO)**.
+**Atrion** is a theoretical framework that reimagines fault tolerance in distributed systems. Instead of rule-based policy enforcement (static circuit breakers), CDO models traffic routing as a **fluid dynamics problem** where erroneous paths become physically inaccessible due to rising impedance.
 
-CDO is a theoretical framework that reimagines fault tolerance in distributed systems not as a rule-based policy enforcement (e.g., static circuit breakers), but as a **fluid dynamics and digital physics problem**. The core hypothesis is that system stability can be achieved by modeling traffic flow through **Vectorized Pressure**, **Momentum (Derivative Control)**, and **Structural Scarring (Hysteresis)**.
-
-The goal is to create a decision topology where erroneous behaviors are not explicitly "forbidden" by policy, but become physically impossible (or prohibitively expensive) due to rising system impedance.
+> **"Don't forbid wrong behavior. Make it physically unsustainable."**
 
 ---
 
-## 2. Core Concepts
+## Core Philosophy
 
-The system operates on four redefined axioms of distributed control:
-
-1. **Decision $\rightarrow$ Flow:** Routing is not a binary choice but a function of potential energy (Priority/Voltage) overcoming dynamic resistance (Impedance).
-2. **Constraint $\rightarrow$ Dynamic Resistance:** Constraints are not static limits. They are variable forces that increase with pressure (Latency, Error, Saturation) and momentum.
-3. **Memory $\rightarrow$ Scar Tissue:** The system retains a "memory" of past failures as topological scarring. This increases the base resistance of a route, which decays over time via entropy.
-4. **Rejection $\rightarrow$ Impedance:** Requests are not actively rejected; they are shed when their priority voltage cannot overcome the calculated total resistance.
+| Traditional Approach        | CDO Approach                   |
+| --------------------------- | ------------------------------ |
+| Binary decisions (ON/OFF)   | Analog resistance (0 → ∞)      |
+| Reactive (wait for failure) | Proactive (momentum-based)     |
+| Stateless (no memory)       | Hysteresis (scar tissue)       |
+| Explicit rejection          | Natural shedding via impedance |
 
 ---
 
-## 3. Mathematical Model
+## The Four Axioms
 
-The engine implements the following discrete-time dynamical equations:
+1. **Decision → Flow:** Routing is potential energy (Voltage) overcoming dynamic resistance (Impedance)
+2. **Constraint → Dynamic Resistance:** Limits are variable forces, not static walls
+3. **Memory → Scar Tissue:** Past failures leave topological traces that decay over time
+4. **Rejection → Impedance:** Requests are shed when voltage cannot overcome resistance
 
-### 3.1. State Space ($\vec{P}$)
+---
 
-Pressure is a 3-dimensional vector representing the stress on a route at time $t$:
+## Mathematical Foundation
+
+### Pressure Vector
+
 $$
-\vec{P}(t) = [ p_{lat}, p_{err}, p_{sat} ]
+\vec{P}(t) = \begin{bmatrix} p_{\text{lat}} \\ p_{\text{err}} \\ p_{\text{sat}} \end{bmatrix} \in [-1, 1]^3
 $$
 
-### 3.2. Momentum ($\vec{M}$)
+Normalized via $\tanh$ for gradient preservation at bounds.
 
-The system is proactive, reacting to the *rate of change* (derivative) rather than just the absolute value:
+### Momentum (Proactive Control)
+
 $$
 \vec{M}(t) = \frac{\vec{P}(t) - \vec{P}(t-1)}{\Delta t}
 $$
 
-### 3.3. The Law of Impedance ($R_{total}$)
+The system brakes **before** hitting the wall, not after.
 
-The total resistance of a route is calculated as:
+### Law of Impedance
+
 $$
-R(t) = R_{base} + \|\vec{P}(t)\| + (\mu \cdot \|\vec{M}(t)\|) + S(t)
+\boxed{R(t) = R_{\text{base}} + (\vec{P}^T \mathbf{W}) + \mu\|\vec{M}\| + S(t)}
 $$
 
-* **$R_{base}$**: Static topological cost.
-* **$\mu$ (Damping)**: Coefficient to penalize high-velocity changes (prevents wall-hitting).
-* **$S(t)$ (Scar)**: Persistent resistance from past trauma, subject to exponential decay ($e^{-\lambda t}$).
+| Term                   | Role                                 |
+| ---------------------- | ------------------------------------ |
+| $R_{\text{base}}$      | Static topological cost              |
+| $\vec{P}^T \mathbf{W}$ | Weighted pressure contribution       |
+| $\mu\|\vec{M}\|$       | Momentum damping (proactive braking) |
+| $S(t)$                 | Scar tissue (historical trauma)      |
+
+### Flow Decision
+
+$$
+\text{Flow} = \begin{cases} 1 & V > R \\ 0 & V \leq R \end{cases}
+$$
 
 ---
 
-## 4. Project Structure
+## Documentation
 
-This repository is structured as a "Game Engine" for reliability simulation, strictly separating the mathematical core from the simulation loop.
+Comprehensive RFC documentation is available:
 
-```text
-/src
-  ├── core/
-  │   ├── types.ts       # Vector definitions and State interfaces
-  │   └── physics.ts     # Pure functions implementing the equations (Ohm's Law, Momentum)
-  ├── simulation/
-  │   ├── scenario.ts    # Synthetic load generators (Sine waves, spikes)
-  │   └── index.ts       # Main simulation loop (No I/O, console plotting)
-  └── tests/             # Unit tests for the physics engine
+| RFC                                                                   | Title                     | Description                            |
+| --------------------------------------------------------------------- | ------------------------- | -------------------------------------- |
+| [RFC-0001](./documentation/rfc/RFC-0001-core-mathematical-model.md)   | Core Mathematical Model   | State space, impedance law, stability  |
+| [RFC-0002](./documentation/rfc/RFC-0002-theoretical-extensions.md)    | Theoretical Extensions    | SLO weights, tanh, multi-rate sampling |
+| [RFC-0003](./documentation/rfc/RFC-0003-stability-analysis.md)        | Stability Analysis        | Lyapunov, failure modes, validation    |
+| [RFC-0004](./documentation/rfc/RFC-0004-implementation-guidelines.md) | Implementation Guidelines | Mental models, invariants, contracts   |
+| [RFC-0005](./documentation/rfc/RFC-0005-research-roadmap.md)          | Research Roadmap          | Open questions, bibliography           |
+| [RFC-0006](./documentation/rfc/RFC-0006-visual-metaphors.md)          | Visual Metaphors          | Mermaid diagrams, hydraulic analogy    |
 
+**Start here:** [RFC Index](./documentation/rfc/README.md) | [Glossary](./documentation/rfc/GLOSSARY.md)
+
+---
+
+## Project Status
+
+| Phase                     | Status               |
+| ------------------------- | -------------------- |
+| Theoretical Foundation    | ✅ Complete (6 RFCs) |
+| Minimal Viable Simulation | 🔲 Planned           |
+| Stability Validation      | 🔲 Planned           |
+| Production Hardening      | 🔲 Future            |
+
+---
+
+## Project Structure
+
+```
+atrion/
+├── documentation/
+│   └── rfc/                    # Request for Comments (6 documents)
+│       ├── README.md           # Index and quick reference
+│       ├── GLOSSARY.md         # Terminology
+│       ├── RFC-0001-*.md       # Core Model
+│       ├── RFC-0002-*.md       # Extensions
+│       ├── RFC-0003-*.md       # Stability
+│       ├── RFC-0004-*.md       # Implementation
+│       ├── RFC-0005-*.md       # Research
+│       └── RFC-0006-*.md       # Diagrams
+├── src/                        # (Planned) Implementation
+│   ├── core/                   # Pure physics functions
+│   └── simulation/             # Validation environment
+├── tests/                      # (Planned) Hypothesis validation
+└── readme.md                   # This file
 ```
 
 ---
 
-## 5. Getting Started
+## Research Hypotheses
 
-This is a **simulation environment**, not a production library. It runs in-memory to validate the mathematical model.
+This project aims to validate:
 
-### Prerequisites
-
-* Node.js (LTS) or Bun
-
-### Installation
-
-```bash
-npm install
-# or
-bun install
-
-```
-
-### Running the Simulation
-
-The default simulation injects synthetic error spikes and visualizes the **Resistance** response in the console.
-
-```bash
-npm start
-# or
-npx ts-node src/simulation/index.ts
-
-```
-
-### Expected Output
-
-Observe the console logs. When an error spike is introduced:
-
-1. **Resistance** should rise *before* the error peaks (due to Momentum).
-2. **Resistance** should remain elevated after the error clears (due to Scar Tissue).
-3. **Resistance** should slowly decay back to baseline (Entropy).
+| Hypothesis         | Claim                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| **H1: Momentum**   | Derivative-based resistance eliminates flapping observed in binary circuit breakers |
+| **H2: Entropy**    | Mathematical decay prevents deadlocks without explicit health checks                |
+| **H3: Remodeling** | Scar tissue routes traffic away from unstable nodes without manual intervention     |
 
 ---
 
-## 6. Research Questions
+## Key Innovations
 
-This project aims to validate the following hypotheses:
+### 1. Analog vs Binary
 
-* **H1:** Momentum-based resistance eliminates "flapping" (hysteresis) observed in binary circuit breakers.
-* **H2:** Mathematical decay (entropy) prevents deadlocks without requiring explicit "health check" probes.
-* **H3:** Scar tissue modeling effectively routes traffic away from chronically unstable nodes without manual intervention (Auto-Remodeling).
+Traditional circuit breakers oscillate (open/close). CDO provides smooth, proportional resistance.
+
+### 2. Proactive Damping
+
+Momentum ($\frac{dP}{dt}$) triggers resistance increase **before** crisis peaks.
+
+### 3. Structural Memory
+
+Scar tissue creates hysteresis — the system "remembers" and "distrusts" historically problematic routes.
+
+### 4. Physics-Based Load Balancing
+
+Traffic naturally flows to lowest-resistance paths via Softmax selection:
+
+$$
+\Pr(\text{route}_j) = \frac{e^{-\beta R_j}}{\sum_k e^{-\beta R_k}}
+$$
 
 ---
 
-## 7. Disclaimer
+## Theoretical Constraints Addressed
 
-This is an academic research proposal and a Proof of Concept (PoC). The code provided here is for **simulation and modeling purposes only**. It is not intended for use in production environments as a traffic controller or load balancer in its current state.
+| Constraint                  | Solution                   | RFC           |
+| --------------------------- | -------------------------- | ------------- |
+| Weight Matrix determination | SLO-driven derivation      | RFC-0002 §1.1 |
+| Lyapunov stability          | Numerical validation suite | RFC-0003 §1   |
+| Cold start problem          | Bootstrap protocol         | RFC-0002 §3.3 |
+| Cascade failure             | Hybrid safety valve        | RFC-0002 §4.1 |
+| Telemetry delay             | Predictive extrapolation   | RFC-0002 §3.2 |
+| Normalization bounds        | tanh soft-bounding         | RFC-0002 §2.1 |
+
+---
+
+## Disclaimer
+
+> ⚠️ **Research Project**
+>
+> This is an academic research proposal and Proof of Concept. The documentation provides theoretical foundations for future implementation. No production-ready code is included at this stage.
+
+---
+
+## License
+
+MIT
+
+---
+
+## References
+
+See [RFC-0005: Research Roadmap](./documentation/rfc/RFC-0005-research-roadmap.md) for comprehensive bibliography including:
+
+- Wiener, N. (1948). _Cybernetics_
+- Ashby, W. R. (1956). _An Introduction to Cybernetics_
+- Strogatz, S. H. (2015). _Nonlinear Dynamics and Chaos_
+- Meadows, D. H. (2008). _Thinking in Systems_
