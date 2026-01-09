@@ -232,32 +232,37 @@ class RedisClusterProvider implements StateProvider {
 
 ---
 
-## 8. Pricing Model
+## 8. Commercial Model
 
-### Per-Cluster Flat License
+### Philosophy: Per-Cluster Licensing
 
-| Tier       | Monthly | Clusters     | Support     |
-| ---------- | ------- | ------------ | ----------- |
-| Starter    | $99     | 1 Production | Community   |
-| Pro        | $299    | 5 Production | Email (48h) |
-| Enterprise | Custom  | Unlimited    | Dedicated   |
+Atrion follows a **value-based licensing** model where cost scales with cluster count, not pod count:
 
-**Why Per-Cluster?**
+- **Predictable cost:** Horizontal scaling doesn't increase bill
+- **Simple metering:** No usage tracking or API call counting
+- **Fair value:** Cluster coordination is the real value-add
 
-- Predictable cost (pod scaling doesn't increase bill)
-- Simple metering (no usage tracking)
-- Fair value (cluster coordination is the real value)
+### Tier Structure
 
-### License Validation
+| Tier           | Target               | Key Features                  |
+| -------------- | -------------------- | ----------------------------- |
+| **Community**  | Individual / Startup | Core Engine + OTel Metrics    |
+| **Pro**        | Growing Team         | Redis Sync + Basic Dashboard  |
+| **Team**       | Scale-up             | Full Dashboard + Audit Logs   |
+| **Enterprise** | Large Organization   | SSO, On-Prem, Compliance, SLA |
+
+### License Enforcement
 
 ```typescript
 interface LicenseKey {
-  tier: 'starter' | 'pro' | 'enterprise'
+  tier: 'community' | 'pro' | 'team' | 'enterprise'
   clusterLimit: number
   expiresAt: Date
   signature: string // Cryptographic, offline validation
 }
 ```
+
+License validation is **offline** (no phone-home) and based on cryptographic signatures.
 
 ---
 
