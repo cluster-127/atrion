@@ -2,8 +2,9 @@
 
 > Conditioned Deterministic Orchestration — A Topological Physics Approach to Distributed Reliability
 
+[![CI](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/status-research-blue)]()
-[![License](https://img.shields.io/badge/license-MIT-green)]()
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 ---
 
@@ -188,7 +189,7 @@ $$
 
 ## License
 
-MIT
+Apache-2.0 — See [LICENSE](LICENSE) for details.
 
 ---
 

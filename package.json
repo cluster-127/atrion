@@ -19,7 +19,7 @@
     "physics-engine"
   ],
   "author": "Erdem Arslan <erdemarslan@ymail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^20.x",
     "fast-check": "^3.x",
