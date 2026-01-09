@@ -8,6 +8,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Phase 4: Stability Mapping
+
+#### Added
+
+- `src/analysis/mapper.ts` - Parameter grid search tool
+  - 10x10 grid: decayRate (0.1-5.0) x scarFactor (1-20)
+  - ASCII heatmap visualization with ANSI colors
+  - Variance-based stability scoring
+- `npm run stability-map` script
+
+#### Results
+
+- **90.2% average stability** across 100 configurations
+- **Optimal config:** decayRate=5.0, scarFactor=1.0
+- **Chaotic zone:** Low decay + medium scar (left edge)
+
+---
+
+### v2.0.0 Roadmap (RFC-0007)
+
+#### Added
+
+- `documentation/rfc/RFC-0007-pluggable-state-architecture.md`
+  - StateProvider interface (Hexagonal Architecture)
+  - InMemoryProvider (default, free)
+  - Cluster sync model (Redis Pub/Sub, eventual consistency)
+  - Gamma blending (γ=0.3) for conflict resolution
+  - Commercial tier structure (Community/Pro/Team/Enterprise)
+
+---
+
 ### Phase 3: Hypothesis Validation
 
 #### Added

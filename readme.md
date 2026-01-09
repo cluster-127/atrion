@@ -141,14 +141,15 @@ $$
 
 Comprehensive RFC documentation is available:
 
-| RFC                                                                   | Title                     | Description                            |
-| --------------------------------------------------------------------- | ------------------------- | -------------------------------------- |
-| [RFC-0001](./documentation/rfc/RFC-0001-core-mathematical-model.md)   | Core Mathematical Model   | State space, impedance law, stability  |
-| [RFC-0002](./documentation/rfc/RFC-0002-theoretical-extensions.md)    | Theoretical Extensions    | SLO weights, tanh, multi-rate sampling |
-| [RFC-0003](./documentation/rfc/RFC-0003-stability-analysis.md)        | Stability Analysis        | Lyapunov, failure modes, validation    |
-| [RFC-0004](./documentation/rfc/RFC-0004-implementation-guidelines.md) | Implementation Guidelines | Mental models, invariants, contracts   |
-| [RFC-0005](./documentation/rfc/RFC-0005-research-roadmap.md)          | Research Roadmap          | Open questions, bibliography           |
-| [RFC-0006](./documentation/rfc/RFC-0006-visual-metaphors.md)          | Visual Metaphors          | Mermaid diagrams, hydraulic analogy    |
+| RFC                                                                      | Title                     | Description                             |
+| ------------------------------------------------------------------------ | ------------------------- | --------------------------------------- |
+| [RFC-0001](./documentation/rfc/RFC-0001-core-mathematical-model.md)      | Core Mathematical Model   | State space, impedance law, stability   |
+| [RFC-0002](./documentation/rfc/RFC-0002-theoretical-extensions.md)       | Theoretical Extensions    | SLO weights, tanh, multi-rate sampling  |
+| [RFC-0003](./documentation/rfc/RFC-0003-stability-analysis.md)           | Stability Analysis        | Lyapunov, failure modes, validation     |
+| [RFC-0004](./documentation/rfc/RFC-0004-implementation-guidelines.md)    | Implementation Guidelines | Mental models, invariants, contracts    |
+| [RFC-0005](./documentation/rfc/RFC-0005-research-roadmap.md)             | Research Roadmap          | Open questions, bibliography            |
+| [RFC-0006](./documentation/rfc/RFC-0006-visual-metaphors.md)             | Visual Metaphors          | Mermaid diagrams, hydraulic analogy     |
+| [RFC-0007](./documentation/rfc/RFC-0007-pluggable-state-architecture.md) | Pluggable State (v2)      | StateProvider, cluster sync, commercial |
 
 **Start here:** [RFC Index](./documentation/rfc/README.md) | [Glossary](./documentation/rfc/GLOSSARY.md)
 
