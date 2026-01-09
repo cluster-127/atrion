@@ -28,6 +28,6 @@
     "vitest": "^1.x"
   },
   "dependencies": {
-    "asciichart": "^1.x"
+    "asciichart": "^1.5.25"
   }
 }

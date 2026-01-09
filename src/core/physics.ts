@@ -47,12 +47,20 @@ export function calculateMomentum(
 
 /**
  * Update scar tissue with decay and potential trauma.
- * S(t) = S(t-1) * e^(-λΔt) + σ * I(||P|| > P_crit)
+ * S(t) = S(t-1) * e^(-λΔt) + σ * I(||P+|| > P_crit)
+ *
+ * AARS: Time constants use SI units (seconds) for readable config values.
+ * deltaT arrives in milliseconds, converted internally.
+ *
+ * CHECK VALVE FIX: Only POSITIVE pressure (stress above baseline) causes trauma.
+ * "Silence" (performance better than baseline) does not cause scarring.
+ * This prevents the "silence is trauma" paradox where negative deviation
+ * from baseline was incorrectly counted as stress.
  *
  * @param currentScar - Current scar tissue value
  * @param pressure - Current pressure vector
  * @param config - Physics configuration
- * @param deltaT - Time delta
+ * @param deltaT - Time delta in milliseconds
  * @returns Updated scar tissue value
  */
 export function updateScar(
@@ -61,12 +69,25 @@ export function updateScar(
   config: PhysicsConfig,
   deltaT: DeltaTime
 ): Scar {
-  // Exponential decay with safe exp
-  const decayed = sanitizePositive(currentScar) * safeExp(-config.decayRate * deltaT, 1)
+  // UNIT CONVERSION: Milliseconds -> Seconds
+  // Without this, e^(-0.1 * 100) = e^(-10) ≈ 0 erases memory instantly
+  const dtSeconds = deltaT / 1000
 
-  // Add trauma if critical
-  const pressureMagnitude = VectorMath.magnitude(pressure)
-  const trauma = pressureMagnitude > config.criticalPressure ? config.scarFactor : 0
+  // Exponential decay with safe exp
+  // decayRate = 0.1 means "10% decay per second"
+  const decayed = sanitizePositive(currentScar) * safeExp(-config.decayRate * dtSeconds, 1)
+
+  // CHECK VALVE: Only positive pressure components cause trauma
+  // Negative values (performance better than baseline) are clamped to 0
+  // This is the "semi-permeable membrane" - stress flows in, relief doesn't cause damage
+  const positiveStressMagnitude = Math.sqrt(
+    Math.max(0, pressure.latency) ** 2 +
+      Math.max(0, pressure.error) ** 2 +
+      Math.max(0, pressure.saturation) ** 2
+  )
+
+  // Add trauma only if positive stress exceeds threshold
+  const trauma = positiveStressMagnitude > config.criticalPressure ? config.scarFactor : 0
 
   return asScar(Math.max(0, decayed + trauma))
 }

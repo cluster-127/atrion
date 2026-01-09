@@ -137,7 +137,21 @@ export interface CircuitBreakerState extends BaseRouteState {
 export type RouteState = BootstrapState | OperationalState | CircuitBreakerState
 
 // ============================================================================
-// 4. CONFIGURATION INTERFACES
+// 4. BASELINES (For Normalization)
+// ============================================================================
+
+/**
+ * Baseline values for telemetry normalization.
+ * Used by normalizeTelemetry() to calculate deviation.
+ */
+export interface Baselines {
+  readonly latencyMs: number
+  readonly errorRate: number
+  readonly saturation: number
+}
+
+// ============================================================================
+// 5. CONFIGURATION INTERFACES
 // ============================================================================
 
 /**

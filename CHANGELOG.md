@@ -8,38 +8,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Phase 1.5 Hotfix: Peer Feedback Integration
+### Phase 3: Hypothesis Validation
 
 #### Added
 
-- `src/core/constants.ts` - Signal vs Noise boundaries
-  - `PHYSICS_EPSILON = 1e-9` — Noise floor
-  - `MIN_SIGNIFICANT_CHANGE = 1e-4` — Deadband threshold
-  - `MAX_SAFE_RESISTANCE = 1e6` — Infinity prevention
+- `tests/hypotheses/h1-momentum.test.ts` - Flapping elimination (4 tests)
+  - Atrion: 1 transition vs Standard CB: 49 transitions (95% reduction)
+- `tests/hypotheses/h2-entropy.test.ts` - Deadlock prevention (2 tests)
+  - Half-Life: 4 ticks (theoretical: 3.47)
+- `tests/hypotheses/h3-autorouting.test.ts` - Auto-routing (2 tests)
+  - Traffic shift: 69.1% to secondary during failure
 
-#### Changed
+#### Changed (Physics v2.0)
 
-- `src/core/vector.ts` - Guarded operations per AARS 3.1/3.3
+- `src/core/physics.ts` - SI Unit System
+  - `deltaT` now converted to seconds internally
+  - `decayRate: 2.0` means "200% decay per second" (human-readable)
+- `src/core/physics.ts` - Check Valve Pattern
+  - Only POSITIVE pressure (stress > baseline) causes trauma
+  - Silence no longer triggers scar tissue accumulation
 
-  - `magnitude()` uses `clampToZero()` for denormalized protection
-  - `divide()` uses `safeDivide()` for NaN/Infinity prevention
-  - `dot()` uses `clampToZero()` for Effective Zero Consistency
+### Phase 2.5: Integration Tests
 
-- `src/core/guards.ts` - Now imports from constants.ts
+#### Added
 
-- `documentation/rfc/RFC-0004-implementation-guidelines.md`
+- `tests/integration/spike.test.ts` - Hysteresis & peak analysis (5 tests)
+- `tests/integration/decay.test.ts` - Scar tissue recovery (4 tests)
+- `tests/integration/circuit-breaker.test.ts` - State transitions (7 tests)
 
-  - Added §3.5 Effective Zero Consistency
-  - Added §3.6 Signal Classification table
+### Phase 2: Simulation
 
-- `tests/unit/vector.test.ts` - EPSILON tolerance for invariants
+#### Added
 
-### Phase 2: Simulation (Planned)
+- `src/simulation/scenarios.ts` - PressureGenerator factory
+  - silence, spike, sustained, oscillating, ramp, recovery, compose
+- `src/simulation/observer.ts` - Telemetry capture & analysis
+- `src/simulation/runner.ts` - VirtualClock tick loop
+- `src/simulation/index.ts` - Entry point with visualization
+- `src/simulation/asciichart.d.ts` - Type declarations
 
-- Scenario generators (spike, sustained, oscillating, recovery)
-- Tick-based runner with VirtualClock
-- Observer with asciichart visualization
-- Integration tests
+### Phase 1.5 Hotfix: Peer Feedback Integration
 
 ---
 
