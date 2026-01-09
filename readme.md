@@ -32,6 +32,52 @@ Unlike binary Circuit Breakers (Open/Closed), Atrion uses a **Physics Engine** t
 
 ---
 
+## Quick Start
+
+```bash
+npm install atrion
+```
+
+```typescript
+import {
+  updatePhysics,
+  deriveBaselines,
+  createPhysicsConfig,
+  type PhysicsState,
+  type SLOConfig,
+} from 'atrion'
+
+// 1. Define your SLO (Service Level Objectives)
+const slo: SLOConfig = {
+  baselineLatencyMs: 50,
+  maxAcceptableLatencyMs: 200,
+  targetErrorRate: 0.01,
+  criticality: { latency: 5, error: 10, saturation: 5 },
+}
+
+// 2. Create physics configuration
+const config = createPhysicsConfig(slo)
+const baselines = deriveBaselines(slo)
+
+// 3. Initialize state
+let state: PhysicsState = {
+  resistance: config.baseResistance,
+  momentum: { latency: 0, error: 0, saturation: 0 },
+  scar: 0,
+  lastPressure: { latency: 0, error: 0, saturation: 0 },
+}
+
+// 4. Update on each telemetry tick
+const telemetry = { latency: 75, error: 0.02, saturation: 0.3 }
+state = updatePhysics(state, telemetry, baselines, config, 100, Date.now())
+
+// 5. Use resistance for routing decisions
+const shouldRoute = state.resistance < config.baseResistance * 5
+console.log(`Resistance: ${state.resistance}Ω, Route: ${shouldRoute}`)
+```
+
+---
+
 ## Core Philosophy
 
 | Traditional Approach        | CDO Approach                   |
@@ -195,11 +241,17 @@ $$
 
 ---
 
-## Disclaimer
+## Stability
 
-> ⚠️ **Research Project with Validated PoC**
+> ✅ **Production Ready (v1.0.0)**
 >
-> This is an academic research project with a working Proof of Concept. The physics engine has been validated through 104 tests, but is not yet production-ready. See CHANGELOG.md for current status.
+> This physics engine has been validated through:
+>
+> - **104 passing tests** (unit, integration, hypothesis)
+> - **90.2% stability** across 100 parameter configurations
+> - **3 scientific hypotheses** proven (Momentum, Entropy, Auto-Routing)
+>
+> See the [Stability Map](#stability-map) for parameter safety zones.
 
 ---
 
