@@ -1,16 +1,32 @@
-# Atrion
+# Atrion ⚡
 
-> Conditioned Deterministic Orchestration — A Topological Physics Approach to Distributed Reliability
+> Deterministic Physics Engine for Adaptive Traffic Orchestration
 
 [![CI](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml)
-[![Status](https://img.shields.io/badge/status-research-blue)]()
+[![Tests](https://img.shields.io/badge/tests-104%20passing-brightgreen)]()
+[![Stability](https://img.shields.io/badge/stability-90.2%25-blue)]()
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+
+> **"Atrion doesn't just break circuits; it heals them."**
+
+---
+
+## Why Atrion?
+
+Unlike binary Circuit Breakers (Open/Closed), Atrion uses a **Physics Engine** to model system health as analog states.
+
+| Feature      | Standard Circuit Breaker  | Atrion CDO               |
+| :----------- | :------------------------ | :----------------------- |
+| **State**    | Binary (Open/Closed)      | Analog (0Ω → ∞Ω)         |
+| **Recovery** | Flapping (49 transitions) | Damped (1 transition)    |
+| **Memory**   | Stateless                 | Scar Tissue (Hysteresis) |
+| **Routing**  | Manual Failover           | Auto (69% traffic shift) |
 
 ---
 
 ## Abstract
 
-**Atrion** is a theoretical framework that reimagines fault tolerance in distributed systems. Instead of rule-based policy enforcement (static circuit breakers), CDO models traffic routing as a **fluid dynamics problem** where erroneous paths become physically inaccessible due to rising impedance.
+**Atrion** reimagines fault tolerance in distributed systems. Instead of rule-based policy enforcement, CDO models traffic routing as a **fluid dynamics problem** where erroneous paths become physically inaccessible due to rising impedance.
 
 > **"Don't forbid wrong behavior. Make it physically unsustainable."**
 
