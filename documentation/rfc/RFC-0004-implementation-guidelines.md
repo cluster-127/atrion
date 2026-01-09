@@ -218,6 +218,39 @@ $$
 \end{cases}
 $$
 
+### 3.5. Effective Zero Consistency
+
+**Problem:** Floating point arithmetic near EPSILON creates discrepancies between `dot(v,v)` and `magnitude(v)²`.
+
+**Rule:** If a value is clamped to zero in one context (magnitude), it MUST be clamped to zero in all related contexts (dot product).
+
+**Rationale:** A system vector cannot be "zero magnitude" but "non-zero energy". We accept the loss of precision (`< 1e-9`) to maintain algebraic invariants and prevent noise-induced instability.
+
+**Invariant:**
+
+$$
+\forall \vec{v}: |\text{dot}(\vec{v}, \vec{v}) - \|\vec{v}\|^2| < \epsilon
+$$
+
+**Implementation:** Both `VectorMath.magnitude()` and `VectorMath.dot()` apply `clampToZero()` to their results.
+
+### 3.6. Signal Classification
+
+The physics engine distinguishes between noise and signal using defined thresholds:
+
+| Magnitude Range     | Classification   | Motor Response        |
+| ------------------- | ---------------- | --------------------- |
+| \|v\| < 1e-9        | **NOISE**        | Treat as 0, no action |
+| 1e-9 ≤ \|v\| < 1e-4 | **MICRO-TREMOR** | Calculate, dampen     |
+| 1e-4 ≤ \|v\| < 1.0  | **SIGNAL**       | Full response         |
+| \|v\| ≥ 1.0         | **SATURATION**   | Clamp to bounds       |
+
+**Constants (defined in `src/core/constants.ts`):**
+
+- `PHYSICS_EPSILON = 1e-9` — Noise floor
+- `MIN_SIGNIFICANT_CHANGE = 1e-4` — Deadband threshold
+- `MAX_SAFE_RESISTANCE = 1e6` — Infinity prevention
+
 ---
 
 ## 4. Configuration Semantics

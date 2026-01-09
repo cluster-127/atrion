@@ -1,0 +1,33 @@
+{
+  "name": "atrion",
+  "version": "0.1.0",
+  "description": "Conditioned Deterministic Orchestration - Physics-based fault tolerance",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "simulate": "tsx src/simulation/index.ts"
+  },
+  "keywords": [
+    "fault-tolerance",
+    "distributed-systems",
+    "circuit-breaker",
+    "physics-engine"
+  ],
+  "author": "Erdem Arslan <erdemarslan@ymail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "fast-check": "^3.x",
+    "tsx": "^4.x",
+    "typescript": "^5.x",
+    "vitest": "^1.x"
+  },
+  "dependencies": {
+    "asciichart": "^1.x"
+  }
+}
