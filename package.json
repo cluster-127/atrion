@@ -1,26 +1,62 @@
 {
   "name": "atrion",
-  "version": "0.1.0",
-  "description": "Conditioned Deterministic Orchestration - Physics-based fault tolerance",
+  "version": "1.0.0",
+  "description": "Deterministic Physics Engine for Adaptive Traffic Orchestration",
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./simulation": {
+      "types": "./dist/simulation/runner.d.ts",
+      "import": "./dist/simulation/runner.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "simulate": "tsx src/simulation/index.ts",
-    "stability-map": "tsx src/analysis/mapper.ts"
+    "stability-map": "tsx src/analysis/mapper.ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "fault-tolerance",
     "distributed-systems",
     "circuit-breaker",
-    "physics-engine"
+    "physics-engine",
+    "load-balancing",
+    "resilience",
+    "traffic-management",
+    "typescript"
   ],
   "author": "Erdem Arslan <erdemarslan@ymail.com>",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laphilosophia/atrion.git"
+  },
+  "homepage": "https://github.com/laphilosophia/atrion#readme",
+  "bugs": {
+    "url": "https://github.com/laphilosophia/atrion/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.x",
     "fast-check": "^3.x",
