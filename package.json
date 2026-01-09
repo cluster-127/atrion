@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "simulate": "tsx src/simulation/index.ts"
+    "simulate": "tsx src/simulation/index.ts",
+    "stability-map": "tsx src/analysis/mapper.ts"
   },
   "keywords": [
     "fault-tolerance",
