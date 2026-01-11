@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.1] - 2026-01-11
+
+### Added: AutoTuner Physics Integration
+
+- **physics.ts**: Optional `autoTuner` parameter for adaptive thresholds
+- **Break threshold**: Uses `autoTuner.computeBreakPoint()` when available
+- **Recovery threshold**: Uses `autoTuner.computeRecoveryPoint()` when available
+- **Observation**: Feeds resistance to tuner for μ+kσ learning
+
+### Changed: Lab Scenario Tuning
+
+- **Microservices**: Aggressive config (scarFactor=50, breakMultiplier=5) → 14/15 fast-fail
+- **IoT**: High-stress config (baseLatency=50, queuePenalty=10x) → 90% sampling, 0 errors
+
+---
+
 ## [1.2.0] - 2026-01-11
 
 ### Added: Neuroplasticity & Wind Tunnel Expansion
