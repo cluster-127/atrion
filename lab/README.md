@@ -56,6 +56,7 @@ lab/
 | **E-Commerce**     | 3009    | **VIP priority routing (Black Friday)**  |
 | **IoT Data Dam**   | 3010    | **Lossy backpressure (sampling)**        |
 | **Microservices**  | 3011-13 | **Domino stopper (fast-fail chain)**     |
+| **AutoTuner**      | -       | **Adaptive threshold validation (μ+kσ)** |
 
 ---
 
