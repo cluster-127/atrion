@@ -188,99 +188,22 @@ export class InMemoryProvider implements StateProvider {
 
 ---
 
-## 7. Enterprise Adapter (Paid)
+## 7. Future Extensions
 
-### 7.1. RedisClusterProvider
-
-```typescript
-// @atrion/cluster (Commercial Package)
-
-import { Atrion } from 'atrion'
-import { RedisClusterProvider } from '@atrion/cluster'
-
-const atrion = new Atrion({
-  provider: new RedisClusterProvider({
-    redis: { url: process.env.REDIS_URL },
-    sync: { interval: 100, channel: 'atrion:sync' },
-    gamma: 0.3, // Cluster influence factor
-  }),
-  license: process.env.ATRION_LICENSE_KEY,
-})
-```
-
-### 7.2. Failure Mode: Graceful Degradation
-
-```typescript
-class RedisClusterProvider implements StateProvider {
-  private fallback = new InMemoryProvider()
-  private healthy = true
-
-  async updateVector(routeId: string, vector: PhysicsVector) {
-    try {
-      await this.redis.publish('atrion:sync', JSON.stringify({ routeId, vector }))
-      this.healthy = true
-    } catch (e) {
-      console.warn('[Atrion] Redis unavailable, degrading to InMemory')
-      this.healthy = false
-      // Continue operating - traffic flow > metrics sync
-    }
-  }
-}
-```
-
-**Principle:** Never crash the application. Traffic flow is more important than state sync.
+> Additional StateProvider implementations may be developed in separate packages.
+> See project documentation for extension guidelines.
 
 ---
 
-## 8. Commercial Model
-
-### Philosophy: Per-Cluster Licensing
-
-Atrion follows a **value-based licensing** model where cost scales with cluster count, not pod count:
-
-- **Predictable cost:** Horizontal scaling doesn't increase bill
-- **Simple metering:** No usage tracking or API call counting
-- **Fair value:** Cluster coordination is the real value-add
-
-### Tier Structure
-
-| Tier           | Target               | Key Features                  |
-| -------------- | -------------------- | ----------------------------- |
-| **Community**  | Individual / Startup | Core Engine + OTel Metrics    |
-| **Pro**        | Growing Team         | Redis Sync + Basic Dashboard  |
-| **Team**       | Scale-up             | Full Dashboard + Audit Logs   |
-| **Enterprise** | Large Organization   | SSO, On-Prem, Compliance, SLA |
-
-### License Enforcement
-
-```typescript
-interface LicenseKey {
-  tier: 'community' | 'pro' | 'team' | 'enterprise'
-  clusterLimit: number
-  expiresAt: Date
-  signature: string // Cryptographic, offline validation
-}
-```
-
-License validation is **offline** (no phone-home) and based on cryptographic signatures.
-
----
-
-## 9. Migration Path (v1 → v2)
+## 8. Migration Path (v1 → v2)
 
 ```typescript
 // v1.0 (Implicit InMemoryProvider)
 const state = updatePhysics(state, telemetry, ...);
 
-// v2.0 (Explicit Provider - Free)
+// v2.0 (Explicit Provider)
 const atrion = new Atrion({
   provider: new InMemoryProvider(), // Default
-});
-
-// v2.0 (Enterprise)
-const atrion = new Atrion({
-  provider: new RedisClusterProvider({ ... }),
-  license: 'atrion_ent_xxx',
 });
 ```
 
@@ -293,9 +216,9 @@ const atrion = new Atrion({
 
 ---
 
-## 10. Open Source Boundary
+## 9. Open Source Scope
 
-### Apache-2.0 (Free)
+### Apache-2.0
 
 - `StateProvider` interface
 - `InMemoryProvider` implementation
@@ -303,52 +226,38 @@ const atrion = new Atrion({
 - All physics functions
 - Simulation tools
 
-### Commercial (Paid)
+---
 
-- `RedisClusterProvider`
-- `PostgresPersistenceAdapter`
-- `AtrionStudio` dashboard
-- License key validation
+## 10. Implementation Phases
+
+| Phase | Deliverable                       | Timeline |
+| ----- | --------------------------------- | -------- |
+| 1     | `StateManager` + `StateProvider`  | Week 1-2 |
+| 2     | `InMemoryProvider` + Atrion class | Week 2-3 |
+| 3     | OpenTelemetry hooks               | Week 3-4 |
 
 ---
 
-## 11. Implementation Phases
+## 11. Risks
 
-| Phase | Deliverable                       | Timeline  |
-| ----- | --------------------------------- | --------- |
-| 1     | `StateManager` + `StateProvider`  | Week 1-2  |
-| 2     | `InMemoryProvider` + Atrion class | Week 2-3  |
-| 3     | OpenTelemetry hooks               | Week 3-4  |
-| 4     | `@atrion/cluster` (private repo)  | Week 5-8  |
-| 5     | License key system                | Week 6-8  |
-| 6     | `@atrion/studio` MVP              | Week 9-12 |
+| Risk                     | Mitigation                               |
+| ------------------------ | ---------------------------------------- |
+| Breaking change backlash | Migration guide + codemods               |
+| Redis failure            | Graceful degradation to InMemoryProvider |
 
 ---
 
-## 12. Risks
-
-| Risk                     | Mitigation                                |
-| ------------------------ | ----------------------------------------- |
-| Breaking change backlash | Migration guide + codemods                |
-| Redis as single backend  | Design for multiple adapters              |
-| License bypass           | Legal protection, not technical DRM       |
-| Redis failure            | Graceful degradation to InMemoryProvider  |
-| Open source competition  | Move fast, build community, provide value |
-
----
-
-## 13. References
+## 12. References
 
 1. Hexagonal Architecture (Ports & Adapters) - Alistair Cockburn
-2. HashiCorp BSL License Model
-3. Redis CRSP (Eventually Consistent)
-4. Kong Enterprise Plugin Architecture
+2. Redis CRSP (Eventually Consistent)
 
 ---
 
-## 14. Changelog
+## 13. Changelog
 
 | Version | Date       | Changes                           |
 | ------- | ---------- | --------------------------------- |
 | 0.1.0   | 2026-01-09 | Initial draft                     |
 | 0.2.0   | 2026-01-09 | Merged: Hexagonal, CachedState, γ |
+| 0.3.0   | 2026-01-11 | Removed commercial sections       |

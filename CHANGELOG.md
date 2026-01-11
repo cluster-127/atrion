@@ -46,7 +46,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **RFC-0008: Pluggable State Architecture** (renumbered from RFC-0007)
 
   - StateProvider interface for cluster sync
-  - Commercial tier structure
 
 - **Wind Tunnel Scenarios** (`lab/`)
   - `game-lod-v2`: Budget miss weight amplification (122% faster LOD switch)
@@ -121,7 +120,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - InMemoryProvider (default, free)
   - Cluster sync model (Redis Pub/Sub, eventual consistency)
   - Gamma blending (γ=0.3) for conflict resolution
-  - Commercial tier structure (Community/Pro/Team/Enterprise)
 
 ---
 

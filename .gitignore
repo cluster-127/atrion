@@ -36,3 +36,6 @@ temp/
 
 # NPM token (never commit)
 .npmrc
+
+# Commercial/Internal docs (never commit)
+COMMERCIAL-ROADMAP.md
