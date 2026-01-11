@@ -4,6 +4,7 @@
  * All functions are pure - no side effects.
  */
 
+import type { AutoTuner } from './auto-tuner.js'
 import { isSafeNumber, safeDivide, safeExp, sanitizePositive } from './guards.js'
 import type {
   BootstrapState,
@@ -229,6 +230,7 @@ function emitEvent(
  * @param config - Physics configuration
  * @param now - Current timestamp
  * @param observer - Optional observer for telemetry (v1.1)
+ * @param autoTuner - Optional AutoTuner for adaptive thresholds (v1.2)
  * @returns Updated route state
  */
 export function updatePhysics(
@@ -237,7 +239,8 @@ export function updatePhysics(
   weights: SensitivityWeights,
   config: PhysicsConfig,
   now: Timestamp,
-  observer?: PhysicsObserver
+  observer?: PhysicsObserver,
+  autoTuner?: AutoTuner
 ): RouteState {
   const tickCount = state.tickCount + 1
   const deltaT = (now - state.lastUpdatedAt) as DeltaTime
@@ -280,8 +283,13 @@ export function updatePhysics(
   const scar = updateScar(state.scarTissue, newPressure, config, deltaT)
   const resistance = calculateResistance(newPressure, momentum, scar, weights, config)
 
-  // Check for circuit breaker trigger
-  const breakPoint = asOhms(config.baseResistance * config.breakMultiplier)
+  // Feed resistance to AutoTuner for learning
+  autoTuner?.observe(resistance)
+
+  // Check for circuit breaker trigger (adaptive or static threshold)
+  const breakPoint = autoTuner
+    ? autoTuner.computeBreakPoint()
+    : asOhms(config.baseResistance * config.breakMultiplier)
 
   if (state.mode === 'OPERATIONAL' && resistance >= breakPoint) {
     // Trigger circuit breaker
@@ -307,9 +315,11 @@ export function updatePhysics(
     const scarBelow = scar < config.scarFactor
     const pressureBelow = pressureMag < config.criticalPressure
 
-    // NEW: Resistance-based recovery (50% of break threshold)
+    // Resistance-based recovery (adaptive or 50% of break threshold)
     // This fixes the CB hysteresis issue where scar decays slowly
-    const recoveryThreshold = asOhms(config.baseResistance * config.breakMultiplier * 0.5)
+    const recoveryThreshold = autoTuner
+      ? autoTuner.computeRecoveryPoint()
+      : asOhms(config.baseResistance * config.breakMultiplier * 0.5)
     const resistanceBelow = resistance < recoveryThreshold
 
     // Recovery: Original conditions OR resistance dropped sufficiently
