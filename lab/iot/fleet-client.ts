@@ -35,12 +35,18 @@ const SAMPLE_THRESHOLDS = [
   { maxR: Infinity, sampleRate: 10 }, // Critical: write 1 in 10
 ]
 
-// Initialize Atrion
+// Initialize Atrion - SENSITIVE to latency for sampling trigger
 const guard = new AtrionGuard({
   observer: consoleObserver,
+  slo: {
+    baselineLatencyMs: 20, // Low baseline = high sensitivity
+    maxAcceptableLatencyMs: 100,
+    targetErrorRate: 0.01,
+    criticality: { latency: 10, error: 5, saturation: 5 },
+  },
   config: {
-    scarFactor: 5,
-    decayRate: 0.3,
+    scarFactor: 20, // Aggressive scar
+    decayRate: 0.2,
   },
 })
 

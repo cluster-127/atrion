@@ -70,12 +70,13 @@ appC.get('/health', (req, res) => {
 const appB = express()
 appB.use(express.json())
 
-// Atrion guard for downstream Service C
+// Atrion guard for downstream Service C - AGGRESSIVE for fast-fail
 const guardC = new AtrionGuard({
   observer: consoleObserver,
   config: {
-    scarFactor: 10, // React quickly to C failures
-    decayRate: 0.2,
+    scarFactor: 50, // Very aggressive scar accumulation
+    decayRate: 0.1, // Slow decay (holds grudge longer)
+    breakMultiplier: 5, // Lower CB threshold (50Ω instead of 100Ω)
   },
 })
 
@@ -144,12 +145,13 @@ appB.get('/health', (req, res) => {
 const appA = express()
 appA.use(express.json())
 
-// Atrion guard for downstream Service B
+// Atrion guard for downstream Service B - follows B's health
 const guardB = new AtrionGuard({
   observer: consoleObserver,
   config: {
-    scarFactor: 5,
-    decayRate: 0.3,
+    scarFactor: 30, // Aggressive for cascade prevention
+    decayRate: 0.2,
+    breakMultiplier: 5,
   },
 })
 

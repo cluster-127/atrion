@@ -34,10 +34,10 @@ let totalDropped = 0
 async function dbWrite(gpsData: any): Promise<number> {
   writeQueue++
 
-  // Simulate write latency based on queue depth
-  const baseLatency = 5
-  const queuePenalty = writeQueue * 0.5
-  const latency = Math.floor(baseLatency + queuePenalty + Math.random() * 5)
+  // Simulate write latency based on queue depth - AGGRESSIVE for stress test
+  const baseLatency = 50 // High base latency
+  const queuePenalty = writeQueue * 10 // Aggressive queue penalty
+  const latency = Math.floor(baseLatency + queuePenalty + Math.random() * 20)
 
   await new Promise((r) => setTimeout(r, latency))
 
