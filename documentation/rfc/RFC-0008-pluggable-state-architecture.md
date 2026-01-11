@@ -1,8 +1,8 @@
-# RFC-0007: Pluggable State Architecture
+# RFC-0008: Pluggable State Architecture
 
 | Field       | Value                                            |
 | ----------- | ------------------------------------------------ |
-| **RFC**     | 0007                                             |
+| **RFC**     | 0008                                             |
 | **Title**   | Pluggable State Architecture                     |
 | **Status**  | Final Draft                                      |
 | **Created** | 2026-01-09                                       |

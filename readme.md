@@ -149,7 +149,8 @@ Comprehensive RFC documentation is available:
 | [RFC-0004](./documentation/rfc/RFC-0004-implementation-guidelines.md)    | Implementation Guidelines | Mental models, invariants, contracts    |
 | [RFC-0005](./documentation/rfc/RFC-0005-research-roadmap.md)             | Research Roadmap          | Open questions, bibliography            |
 | [RFC-0006](./documentation/rfc/RFC-0006-visual-metaphors.md)             | Visual Metaphors          | Mermaid diagrams, hydraulic analogy     |
-| [RFC-0007](./documentation/rfc/RFC-0007-pluggable-state-architecture.md) | Pluggable State (v2)      | StateProvider, cluster sync, commercial |
+| [RFC-0007](./documentation/rfc/RFC-0007-adaptive-thresholds.md)          | Adaptive Thresholds       | AutoTuner, μ+kσ, neuroplasticity        |
+| [RFC-0008](./documentation/rfc/RFC-0008-pluggable-state-architecture.md) | Pluggable State (v2)      | StateProvider, cluster sync, commercial |
 
 **Start here:** [RFC Index](./documentation/rfc/README.md) | [Glossary](./documentation/rfc/GLOSSARY.md)
 

@@ -6,6 +6,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] - 2026-01-11
+
+### Added: Neuroplasticity & Wind Tunnel Expansion
+
+- **Circuit Breaker Recovery Fix** (`src/core/physics.ts`)
+
+  - Resistance-based CB exit: R < 50Ω triggers recovery
+  - Fixes hysteresis trap where CB never exited
+
+- **AutoTuner Module** (`src/core/auto-tuner.ts`)
+
+  - EMA-based adaptive thresholds (RFC-0007)
+  - Dynamic break point: μ + kσ
+  - Hybrid limits: minFloor, hardCeiling
+
+- **RFC-0007: Adaptive Thresholds** (Neuroplasticity)
+
+  - Mathematical formulation for dynamic thresholds
+  - Z-Score interpretation (k=1,2,3)
+  - Migration path: v1.2 opt-in → v2.0 default
+
+- **RFC-0008: Pluggable State Architecture** (renumbered from RFC-0007)
+
+  - StateProvider interface for cluster sync
+  - Commercial tier structure
+
+- **Wind Tunnel Scenarios** (`lab/`)
+  - `game-lod-v2`: Budget miss weight amplification (122% faster LOD switch)
+  - `cb-recovery`: Circuit breaker exit validation
+  - `predictive-lod`: Trend-based anticipatory degradation (75% predictive)
+  - `ecommerce`: Black Friday VIP priority (84% revenue efficiency)
+  - `iot`: Lossy backpressure (sampling)
+  - `microservices`: Domino stopper (fast-fail chain)
+
+### Changed
+
+- RFC priorities swapped: Adaptive Thresholds now RFC-0007, Pluggable State now RFC-0008
+
+---
+
+## [1.1.0] - 2026-01-11
+
+### Added: Observability Patch (Operation First Flight)
+
+- **PhysicsObserver Interface** - Optional callback for real-time telemetry
+
+  - `PhysicsEvent` type with all computed values (resistance, momentum, scar, mode)
+  - `ObserverDecision` type: FLOW | SHED | BOOTSTRAP
+  - Mode transition detection
+
+- **Built-in Observers** (`src/core/observers.ts`)
+
+  - `consoleObserver` - Emoji-prefixed debug logging (✅/🚫/🔄)
+  - `silentObserver` - No-op for benchmarking overhead
+  - `createCompositeObserver()` - Fan-out to multiple observers
+  - `createFilteredObserver()` - Conditional event filtering
+  - `createCollectorObserver()` - Event array collection
+
+- **Unit Tests** (`tests/unit/observer.test.ts`) - 10 new tests
+  - Observer integration with updatePhysics
+  - Mode transition detection
+  - Built-in observer functionality
+
+### Changed
+
+- `updatePhysics()` now accepts optional `observer?: PhysicsObserver` parameter
+- No breaking changes - fully backwards compatible
+
+---
+
 ## [Unreleased]
 
 ### Phase 4: Stability Mapping

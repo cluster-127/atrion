@@ -225,3 +225,74 @@ export type FlowDecision =
   | { readonly type: 'PASS'; readonly routeId: string }
   | { readonly type: 'REJECT'; readonly reason: 'INSUFFICIENT_VOLTAGE' | 'CIRCUIT_OPEN' }
   | { readonly type: 'REDIRECT'; readonly targetRouteId: string }
+
+// ============================================================================
+// 6. OBSERVABILITY (v1.1)
+// ============================================================================
+
+/**
+ * Decision type for observer events.
+ * Derived from mode and resistance.
+ */
+export type ObserverDecision = 'FLOW' | 'SHED' | 'BOOTSTRAP'
+
+/**
+ * Physics telemetry event emitted on each updatePhysics call.
+ * Contains all computed values for debugging and monitoring.
+ */
+export interface PhysicsEvent {
+  /** Route identifier */
+  readonly routeId: string
+
+  /** Current operational mode */
+  readonly mode: OperationalMode
+
+  /** Computed total resistance (Ohms) */
+  readonly resistance: Ohms
+
+  /** Momentum magnitude (rate of change) */
+  readonly momentum: Momentum | undefined
+
+  /** Accumulated scar tissue */
+  readonly scarTissue: Scar
+
+  /** Derived decision based on mode */
+  readonly decision: ObserverDecision
+
+  /** Time delta since last update (ms) */
+  readonly deltaT: DeltaTime
+
+  /** Current timestamp */
+  readonly timestamp: Timestamp
+
+  /** Euclidean magnitude of pressure vector */
+  readonly pressureMagnitude: number
+
+  /** Mode transition if occurred */
+  readonly modeTransition?: {
+    readonly from: OperationalMode
+    readonly to: OperationalMode
+  }
+
+  /** Tick count for debugging */
+  readonly tickCount: number
+}
+
+/**
+ * Observer interface for physics telemetry.
+ * Implement this to receive real-time physics decisions.
+ *
+ * @example
+ * const observer: PhysicsObserver = {
+ *   onUpdate(event) {
+ *     console.log(`Route ${event.routeId}: R=${event.resistance}Ω`)
+ *   }
+ * }
+ */
+export interface PhysicsObserver {
+  /**
+   * Called after each physics update.
+   * @param event - Telemetry event with all computed values
+   */
+  onUpdate(event: PhysicsEvent): void
+}

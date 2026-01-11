@@ -10,9 +10,12 @@ import type {
   CircuitBreakerState,
   DeltaTime,
   Momentum,
+  ObserverDecision,
   Ohms,
   OperationalState,
   PhysicsConfig,
+  PhysicsEvent,
+  PhysicsObserver,
   PressureVector,
   RouteState,
   Scar,
@@ -168,16 +171,73 @@ export function createBootstrapState(
 }
 
 /**
+ * Derive decision from mode for observer events.
+ */
+function deriveDecision(mode: RouteState['mode']): ObserverDecision {
+  switch (mode) {
+    case 'BOOTSTRAP':
+      return 'BOOTSTRAP'
+    case 'CIRCUIT_BREAKER':
+      return 'SHED'
+    case 'OPERATIONAL':
+      return 'FLOW'
+  }
+}
+
+/**
+ * Emit physics event to observer if provided.
+ */
+function emitEvent(
+  observer: PhysicsObserver | undefined,
+  prevState: RouteState,
+  nextState: RouteState,
+  pressure: PressureVector,
+  deltaT: DeltaTime,
+  now: Timestamp
+): void {
+  if (!observer) return
+
+  const pressureMagnitude = VectorMath.magnitude(pressure)
+  const decision = deriveDecision(nextState.mode)
+
+  const event: PhysicsEvent = {
+    routeId: nextState.routeId,
+    mode: nextState.mode,
+    resistance: nextState.resistance,
+    momentum: nextState.mode !== 'BOOTSTRAP' ? nextState.momentum : undefined,
+    scarTissue: nextState.scarTissue,
+    decision,
+    deltaT,
+    timestamp: now,
+    pressureMagnitude,
+    tickCount: nextState.tickCount,
+    modeTransition:
+      prevState.mode !== nextState.mode ? { from: prevState.mode, to: nextState.mode } : undefined,
+  }
+
+  observer.onUpdate(event)
+}
+
+/**
  * Main physics update function.
  * Transitions state machine and calculates new physics values.
  * Pure function - returns new state, does not mutate input.
+ *
+ * @param state - Current route state
+ * @param newPressure - New pressure vector from telemetry
+ * @param weights - Sensitivity weights derived from SLOs
+ * @param config - Physics configuration
+ * @param now - Current timestamp
+ * @param observer - Optional observer for telemetry (v1.1)
+ * @returns Updated route state
  */
 export function updatePhysics(
   state: RouteState,
   newPressure: PressureVector,
   weights: SensitivityWeights,
   config: PhysicsConfig,
-  now: Timestamp
+  now: Timestamp,
+  observer?: PhysicsObserver
 ): RouteState {
   const tickCount = state.tickCount + 1
   const deltaT = (now - state.lastUpdatedAt) as DeltaTime
@@ -185,12 +245,14 @@ export function updatePhysics(
   // Bootstrap mode: collect data, don't compute full physics
   if (state.mode === 'BOOTSTRAP') {
     if (tickCount < config.bootstrapTicks) {
-      return {
+      const nextState: RouteState = {
         ...state,
         pressure: newPressure,
         tickCount,
         lastUpdatedAt: now,
       }
+      emitEvent(observer, state, nextState, newPressure, deltaT, now)
+      return nextState
     }
 
     // Transition to operational
@@ -198,7 +260,7 @@ export function updatePhysics(
     const scar = updateScar(state.scarTissue, newPressure, config, deltaT)
     const resistance = calculateResistance(newPressure, momentum, scar, weights, config)
 
-    return {
+    const nextState: OperationalState = {
       routeId: state.routeId,
       mode: 'OPERATIONAL',
       pressure: newPressure,
@@ -208,7 +270,9 @@ export function updatePhysics(
       resistance,
       tickCount,
       lastUpdatedAt: now,
-    } satisfies OperationalState
+    }
+    emitEvent(observer, state, nextState, newPressure, deltaT, now)
+    return nextState
   }
 
   // Operational or Circuit Breaker: full physics
@@ -221,7 +285,7 @@ export function updatePhysics(
 
   if (state.mode === 'OPERATIONAL' && resistance >= breakPoint) {
     // Trigger circuit breaker
-    return {
+    const nextState: CircuitBreakerState = {
       routeId: state.routeId,
       mode: 'CIRCUIT_BREAKER',
       pressure: newPressure,
@@ -232,7 +296,9 @@ export function updatePhysics(
       tickCount,
       lastUpdatedAt: now,
       recoveryStartedAt: now,
-    } satisfies CircuitBreakerState
+    }
+    emitEvent(observer, state, nextState, newPressure, deltaT, now)
+    return nextState
   }
 
   if (state.mode === 'CIRCUIT_BREAKER') {
@@ -241,9 +307,15 @@ export function updatePhysics(
     const scarBelow = scar < config.scarFactor
     const pressureBelow = pressureMag < config.criticalPressure
 
-    if (scarBelow && pressureBelow) {
+    // NEW: Resistance-based recovery (50% of break threshold)
+    // This fixes the CB hysteresis issue where scar decays slowly
+    const recoveryThreshold = asOhms(config.baseResistance * config.breakMultiplier * 0.5)
+    const resistanceBelow = resistance < recoveryThreshold
+
+    // Recovery: Original conditions OR resistance dropped sufficiently
+    if ((scarBelow && pressureBelow) || resistanceBelow) {
       // Recover to operational
-      return {
+      const nextState: OperationalState = {
         routeId: state.routeId,
         mode: 'OPERATIONAL',
         pressure: newPressure,
@@ -253,11 +325,13 @@ export function updatePhysics(
         resistance,
         tickCount,
         lastUpdatedAt: now,
-      } satisfies OperationalState
+      }
+      emitEvent(observer, state, nextState, newPressure, deltaT, now)
+      return nextState
     }
 
     // Stay in circuit breaker
-    return {
+    const nextState: RouteState = {
       ...state,
       pressure: newPressure,
       previousPressure: state.pressure,
@@ -267,10 +341,12 @@ export function updatePhysics(
       tickCount,
       lastUpdatedAt: now,
     }
+    emitEvent(observer, state, nextState, newPressure, deltaT, now)
+    return nextState
   }
 
   // Stay operational
-  return {
+  const nextState: OperationalState = {
     routeId: state.routeId,
     mode: 'OPERATIONAL',
     pressure: newPressure,
@@ -280,5 +356,7 @@ export function updatePhysics(
     resistance,
     tickCount,
     lastUpdatedAt: now,
-  } satisfies OperationalState
+  }
+  emitEvent(observer, state, nextState, newPressure, deltaT, now)
+  return nextState
 }

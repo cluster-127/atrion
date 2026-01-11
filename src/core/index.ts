@@ -11,16 +11,19 @@ export type {
   FlowDecision,
   Momentum,
   NormalizedPressure,
+  ObserverDecision,
   Ohms,
   OperationalMode,
   OperationalState,
   PhysicsConfig,
+  PhysicsEvent,
+  PhysicsObserver,
   PressureVector,
   Request,
   RouteState,
+  SLOConfig,
   Scar,
   SensitivityWeights,
-  SLOConfig,
   Timestamp,
   Volts,
 } from './types.js'
@@ -54,16 +57,16 @@ export { MAX_SAFE_RESISTANCE, MIN_SIGNIFICANT_CHANGE, PHYSICS_EPSILON } from './
 
 // Guards (defensive programming)
 export {
-  clampToZero,
   // Constants
   EPSILON,
-  // Primitive guards
-  isSafeNumber,
   MAX_RESISTANCE,
   MIN_DELTA_T,
-  normalizeZero,
   // Composite guard
   PhysicsGuard,
+  clampToZero,
+  // Primitive guards
+  isSafeNumber,
+  normalizeZero,
   safeClamp,
   safeDivide,
   safeExp,
@@ -96,4 +99,17 @@ export {
   setLogger,
   silentLogger,
 } from './logger.js'
-export type { Logger, LogLevel } from './logger.js'
+export type { LogLevel, Logger } from './logger.js'
+
+// Observers (v1.1)
+export {
+  consoleObserver,
+  createCollectorObserver,
+  createCompositeObserver,
+  createFilteredObserver,
+  silentObserver,
+} from './observers.js'
+
+// AutoTuner (RFC-0008: Adaptive Thresholds)
+export { AutoTuner, DEFAULT_AUTOTUNER_CONFIG } from './auto-tuner.js'
+export type { AutoTunerConfig, TunerStats } from './auto-tuner.js'

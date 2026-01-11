@@ -58,7 +58,10 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^20.x",
+    "axios": "^1.13.2",
+    "express": "^5.2.1",
     "fast-check": "^3.x",
     "tsx": "^4.x",
     "typescript": "^5.x",
