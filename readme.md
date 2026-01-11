@@ -2,6 +2,8 @@
 
 > Physics-based concurrency control for Node.js. Replaces static rate limits with Z-Score auto-tuning, deterministic backpressure, and priority-based load shedding.
 
+[![Atrion](.github/assets/banner.jpg)](https://github.com/laphilosophia/atrion)
+
 [![CI](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-114%20passing-brightgreen)]()
 [![npm](https://img.shields.io/npm/v/atrion)](https://www.npmjs.com/package/atrion)
