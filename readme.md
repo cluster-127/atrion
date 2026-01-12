@@ -37,6 +37,88 @@ R(t) = R_base + Pressure + Momentum + ScarTissue
 
 ---
 
+## Theory of Operation
+
+> **Why physics instead of heuristics?**
+
+Traditional circuit breakers and rate limiters introduce complex behavior that often leads to complex failures. Atrion takes a different approach: instead of arbitrary static limits, we model traffic as a physical system with predictable, mathematically guaranteed behavior.
+
+### Mathematical Foundation
+
+Atrion is built on **Control Theory** principles (specifically PID-like feedback loops without integral windup) and **Fluid Dynamics**.
+
+```
+Traffic ≈ Fluid with Pressure, Resistance, and Momentum
+```
+
+The system ensures stability via a **Critical Damping** approach. We calculate a 'Scar Tissue' metric that accumulates based on failure severity and decays over time. This creates a _mathematically guaranteed hysteresis loop_, preventing the 'flapping' (rapid open/close) that plagues standard circuit breakers.
+
+### Gray Failure Detection
+
+> "Dead services are easy. Zombie services are the killers."
+
+Standard health checks fail when a service is _technically alive but behaviorally broken_—responding slowly, returning garbage, or stuck in cleanup loops. Atrion doesn't just count requests; it measures **Service Resistance**.
+
+Consider this scenario:
+
+1. A processing node receives a complex request
+2. It takes longer than expected → upstream times out
+3. The cancellation triggers cleanup that also takes too long
+4. Meanwhile, upstream retries, but the node is still "cleaning up"
+5. Requests queue, the original gets resent, and... cascade failure
+
+A standard rate limiter fails here because RPS might be low, but **concurrency saturation is high**.
+
+Atrion detects this through:
+
+| Metric         | What It Catches                     |
+| -------------- | ----------------------------------- |
+| **Pressure**   | Current concurrency/latency stress  |
+| **Resistance** | Degraded responses (slow ≠ healthy) |
+| **Momentum**   | Rate of degradation (early warning) |
+
+Even if the node is responding (but slowly/wrongly), the resistance spikes. This triggers protective measures _before_ the cascade begins.
+
+### Momentum-Based Retry Storm Prevention
+
+The "stuck cleanup" scenario has another killer: retry storms. Atrion implements **Momentum-based throttling**:
+
+```
+If a node is stuck cleaning up, its 'momentum' remains high
+even if current RPS is zero.
+```
+
+This physically prevents upstream systems from dumping new retries into a node that hasn't "cooled down" yet, **regardless of timeout settings**. The physics model remembers recent stress even when instantaneous load looks normal.
+
+### Auto-Tuning: Eliminating Magic Numbers
+
+> "Idiots misconfiguring it" is a valid fear.
+
+That's why Atrion uses **Z-Score analysis** instead of hardcoded thresholds:
+
+```
+dynamicBreak = μ(R) + 3σ(R)
+```
+
+The system calculates baseline latency (μ) and deviation (σ) in real-time. If behavior falls outside 3σ, it clamps down. This removes the "magic number guessing" that leads to misconfiguration:
+
+| Scenario                          | Traditional               | Atrion                     |
+| --------------------------------- | ------------------------- | -------------------------- |
+| Night traffic (low volume)        | Fixed threshold too loose | Tight threshold (low μ)    |
+| Peak hours (high volume)          | Fixed threshold too tight | Relaxed threshold (high μ) |
+| New deployment (unknown baseline) | Guess and pray            | Learns within minutes      |
+
+### What This Means in Production
+
+| Failure Mode               | Traditional CB       | Atrion                  |
+| -------------------------- | -------------------- | ----------------------- |
+| Flapping during recovery   | 49+ transitions      | 1 transition            |
+| Zombie service detection   | Miss (still "alive") | Catch (high resistance) |
+| Retry storm amplification  | Passthrough          | Momentum blocks         |
+| Threshold misconfiguration | Silent failures      | Self-adjusting          |
+
+---
+
 ## Quick Start
 
 ```bash
