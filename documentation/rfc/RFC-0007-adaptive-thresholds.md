@@ -4,7 +4,7 @@
 | ----------- | --------------------- |
 | **Status**  | Draft                 |
 | **Created** | 2026-01-11            |
-| **Authors** | Antigravity Agent     |
+| **Authors** | Erdem Arslan          |
 | **Depends** | RFC-0001 (Core Model) |
 
 ---
