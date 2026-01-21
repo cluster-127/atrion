@@ -113,3 +113,6 @@ export {
 // AutoTuner (RFC-0008: Adaptive Thresholds)
 export { AutoTuner, DEFAULT_AUTOTUNER_CONFIG } from './auto-tuner.js'
 export type { AutoTunerConfig, TunerStats } from './auto-tuner.js'
+
+// Errors
+export { AtrionError, ConnectionError, DependencyError, ParseError, SyncError } from './errors.js'

@@ -42,7 +42,7 @@ const asOhms = (n: number): Ohms => sanitizePositive(n) as Ohms
 export function calculateMomentum(
   current: PressureVector,
   previous: PressureVector,
-  deltaT: DeltaTime
+  deltaT: DeltaTime,
 ): Momentum {
   const delta = VectorMath.subtract(current, previous)
   const magnitude = VectorMath.magnitude(delta)
@@ -71,7 +71,7 @@ export function updateScar(
   currentScar: Scar,
   pressure: PressureVector,
   config: PhysicsConfig,
-  deltaT: DeltaTime
+  deltaT: DeltaTime,
 ): Scar {
   // UNIT CONVERSION: Milliseconds -> Seconds
   // Without this, e^(-0.1 * 100) = e^(-10) ≈ 0 erases memory instantly
@@ -87,7 +87,7 @@ export function updateScar(
   const positiveStressMagnitude = Math.sqrt(
     Math.max(0, pressure.latency) ** 2 +
       Math.max(0, pressure.error) ** 2 +
-      Math.max(0, pressure.saturation) ** 2
+      Math.max(0, pressure.saturation) ** 2,
   )
 
   // Add trauma only if positive stress exceeds threshold
@@ -108,7 +108,7 @@ export function updateScar(
 export function calculateStaleness(
   lastUpdatedAt: Timestamp,
   now: Timestamp,
-  stalenessFactor: number = 0.5
+  stalenessFactor: number = 0.5,
 ): number {
   const stalenessSeconds = (now - lastUpdatedAt) / 1000
   return stalenessFactor * stalenessSeconds
@@ -132,7 +132,7 @@ export function calculateResistance(
   scar: Scar,
   weights: SensitivityWeights,
   config: PhysicsConfig,
-  staleness: number = 0
+  staleness: number = 0,
 ): Ohms {
   // Weighted pressure contribution: P^T · W
   const weightedPressure = VectorMath.scaleComponents(pressure, weights)
@@ -156,7 +156,7 @@ export function createBootstrapState(
   routeId: string,
   initialPressure: PressureVector,
   config: PhysicsConfig,
-  now: Timestamp
+  now: Timestamp,
 ): BootstrapState {
   return {
     routeId,
@@ -187,6 +187,7 @@ function deriveDecision(mode: RouteState['mode']): ObserverDecision {
 
 /**
  * Emit physics event to observer if provided.
+ * Uses setImmediate to prevent blocking the main physics loop.
  */
 function emitEvent(
   observer: PhysicsObserver | undefined,
@@ -194,7 +195,7 @@ function emitEvent(
   nextState: RouteState,
   pressure: PressureVector,
   deltaT: DeltaTime,
-  now: Timestamp
+  now: Timestamp,
 ): void {
   if (!observer) return
 
@@ -216,7 +217,8 @@ function emitEvent(
       prevState.mode !== nextState.mode ? { from: prevState.mode, to: nextState.mode } : undefined,
   }
 
-  observer.onUpdate(event)
+  // Non-blocking observer notification
+  setImmediate(() => observer.onUpdate(event))
 }
 
 /**
@@ -240,7 +242,7 @@ export function updatePhysics(
   config: PhysicsConfig,
   now: Timestamp,
   observer?: PhysicsObserver,
-  autoTuner?: AutoTuner
+  autoTuner?: AutoTuner,
 ): RouteState {
   const tickCount = state.tickCount + 1
   const deltaT = (now - state.lastUpdatedAt) as DeltaTime

@@ -44,8 +44,11 @@ describe('PhysicsObserver', () => {
     return createBootstrapState('test-route', zeroPressure, config, 1000 as Timestamp)
   }
 
+  // Helper to wait for setImmediate (observer is now async)
+  const tick = () => new Promise((r) => setImmediate(r))
+
   describe('Observer Integration', () => {
-    it('should call observer.onUpdate on every updatePhysics call', () => {
+    it('should call observer.onUpdate on every updatePhysics call', async () => {
       const onUpdate = vi.fn()
       const observer: PhysicsObserver = { onUpdate }
 
@@ -54,6 +57,7 @@ describe('PhysicsObserver', () => {
       state = updatePhysics(state, zeroPressure, weights, config, 1200 as Timestamp, observer)
       state = updatePhysics(state, zeroPressure, weights, config, 1300 as Timestamp, observer)
 
+      await tick() // Wait for setImmediate callbacks
       expect(onUpdate).toHaveBeenCalledTimes(3)
     })
 
@@ -65,13 +69,14 @@ describe('PhysicsObserver', () => {
       }).not.toThrow()
     })
 
-    it('should emit correct event data', () => {
+    it('should emit correct event data', async () => {
       const events: PhysicsEvent[] = []
       const observer = createCollectorObserver(events)
 
       let state: RouteState = getInitialState()
       state = updatePhysics(state, highPressure, weights, config, 1100 as Timestamp, observer)
 
+      await tick()
       expect(events).toHaveLength(1)
       const event = events[0]
 
@@ -84,7 +89,7 @@ describe('PhysicsObserver', () => {
       expect(typeof event.scarTissue).toBe('number')
     })
 
-    it('should detect mode transitions', () => {
+    it('should detect mode transitions', async () => {
       const events: PhysicsEvent[] = []
       const observer = createCollectorObserver(events)
 
@@ -97,10 +102,11 @@ describe('PhysicsObserver', () => {
           weights,
           config,
           (1100 + i * 100) as Timestamp,
-          observer
+          observer,
         )
       }
 
+      await tick()
       // Find the transition event
       const transitionEvent = events.find((e) => e.modeTransition !== undefined)
       expect(transitionEvent).toBeDefined()
@@ -110,7 +116,7 @@ describe('PhysicsObserver', () => {
       })
     })
 
-    it('should emit SHED decision on circuit breaker mode', () => {
+    it('should emit SHED decision on circuit breaker mode', async () => {
       const events: PhysicsEvent[] = []
       const observer = createCollectorObserver(events)
 
@@ -123,7 +129,7 @@ describe('PhysicsObserver', () => {
           weights,
           config,
           (1000 + i * 100) as Timestamp,
-          observer
+          observer,
         )
       }
 
@@ -142,11 +148,12 @@ describe('PhysicsObserver', () => {
           weights,
           config,
           (2000 + i * 100) as Timestamp,
-          observer
+          observer,
         )
         if (state.mode === 'CIRCUIT_BREAKER') break
       }
 
+      await tick()
       // Find SHED event
       const shedEvent = events.find((e) => e.decision === 'SHED')
       if (state.mode === 'CIRCUIT_BREAKER') {
@@ -204,7 +211,7 @@ describe('PhysicsObserver', () => {
       const composite = createCompositeObserver(
         { onUpdate: fn1 },
         { onUpdate: fn2 },
-        { onUpdate: fn3 }
+        { onUpdate: fn3 },
       )
 
       const mockEvent = {

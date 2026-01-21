@@ -11,6 +11,7 @@
  * @requires ioredis as peer dependency
  */
 
+import { ConnectionError, DependencyError } from '../../errors.js'
 import type { PhysicsVector, StateProvider } from '../types.js'
 
 /**
@@ -72,18 +73,24 @@ export class RedisStateProvider implements StateProvider {
     }
   }
 
+  /**
+   * Ensure client is connected, throw if not.
+   */
+  private ensureConnected(): RedisClient {
+    if (!this.client) {
+      throw new ConnectionError(this.name)
+    }
+    return this.client
+  }
+
   async connect(): Promise<void> {
     // Dynamic import ioredis (peer dependency)
-    // Using 'any' for flexibility with different ioredis versions
     let RedisConstructor: any
     try {
       const ioredis = await import('ioredis')
       RedisConstructor = ioredis.default ?? ioredis
     } catch {
-      throw new Error(
-        'RedisStateProvider requires ioredis as peer dependency. ' +
-          'Install with: npm install ioredis',
-      )
+      throw new DependencyError('ioredis', 'npm install ioredis')
     }
 
     // Create client
@@ -111,7 +118,7 @@ export class RedisStateProvider implements StateProvider {
           callback(vector)
         }
       } catch {
-        // Ignore malformed messages
+        // Ignore malformed messages - graceful degradation
       }
     })
   }
@@ -129,44 +136,40 @@ export class RedisStateProvider implements StateProvider {
   }
 
   async getVector(routeId: string): Promise<PhysicsVector | null> {
-    if (!this.client) throw new Error('Not connected')
-
+    const client = this.ensureConnected()
     const key = this.options.keyPrefix + routeId
-    const data = await this.client.get(key)
+    const data = await client.get(key)
 
     if (!data) return null
 
     try {
       return JSON.parse(data) as PhysicsVector
     } catch {
-      return null
+      return null // Graceful degradation for malformed data
     }
   }
 
   async updateVector(routeId: string, vector: PhysicsVector): Promise<void> {
-    if (!this.client) throw new Error('Not connected')
-
+    const client = this.ensureConnected()
     const key = this.options.keyPrefix + routeId
     const data = JSON.stringify(vector)
 
     // Store in Redis
-    await this.client.set(key, data)
+    await client.set(key, data)
 
     // Publish to other nodes (fire-and-forget)
-    await this.client.publish(this.options.channel, JSON.stringify({ routeId, vector }))
+    await client.publish(this.options.channel, JSON.stringify({ routeId, vector }))
   }
 
   async deleteVector(routeId: string): Promise<void> {
-    if (!this.client) throw new Error('Not connected')
-
+    const client = this.ensureConnected()
     const key = this.options.keyPrefix + routeId
-    await this.client.del(key)
+    await client.del(key)
   }
 
   async listRoutes(): Promise<string[]> {
-    if (!this.client) throw new Error('Not connected')
-
-    const keys = await this.client.keys(this.options.keyPrefix + '*')
+    const client = this.ensureConnected()
+    const keys = await client.keys(this.options.keyPrefix + '*')
     return keys.map((key) => key.slice(this.options.keyPrefix.length))
   }
 

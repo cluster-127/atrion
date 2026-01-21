@@ -6,6 +6,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.1] - 2026-01-21
+
+### Added: Error Handling & Code Quality Improvements
+
+- **Custom Error Hierarchy** (`src/core/errors.ts`)
+  - `AtrionError` base class with proper stack traces
+  - `ConnectionError` for provider connection failures
+  - `DependencyError` for missing peer dependencies
+  - `SyncError` for state synchronization failures
+  - `ParseError` for malformed data
+
+- **InMemoryProvider LRU** (`src/core/state/providers/inmemory.ts`)
+  - Optional `maxRoutes` config for memory management
+  - Automatic LRU eviction when at capacity
+
+### Changed
+
+- **Observer Async Execution** (`src/core/physics.ts`)
+  - `setImmediate()` wrapping prevents blocking main physics loop
+  - Observer failures can't crash physics calculations
+
+- **Redis Provider Refactored** (`src/core/state/providers/redis.ts`)
+  - `ensureConnected()` helper replaces repeated guard clauses
+  - Uses custom `ConnectionError` and `DependencyError`
+
+- **Logger Integration** (`src/core/state/manager.ts`)
+  - Provider sync errors now use centralized Logger
+  - Better observability for production debugging
+
+### Fixed
+
+- Observer tests updated for async `setImmediate` behavior
+
+---
+
 ## [1.3.0] - 2026-01-21
 
 ### Added: Pluggable State Architecture (RFC-0008)

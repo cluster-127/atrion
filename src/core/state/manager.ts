@@ -76,7 +76,10 @@ export class StateManager {
     if (syncToProvider && this.connected) {
       this.provider.updateVector(routeId, vector).catch((err) => {
         // Log but don't throw - provider failure shouldn't break physics
-        console.warn(`[StateManager] Provider sync failed for ${routeId}:`, err)
+        // Uses centralized logger for observability
+        import('../logger.js').then(({ getLogger }) => {
+          getLogger().warn(`Provider sync failed for ${routeId}`, err)
+        })
       })
     }
   }

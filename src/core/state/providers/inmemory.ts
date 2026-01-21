@@ -9,12 +9,25 @@
 import type { PhysicsVector, StateProvider } from '../types.js'
 
 /**
- * In-memory state provider using Map storage.
+ * Options for InMemoryProvider.
+ */
+export interface InMemoryOptions {
+  /**
+   * Maximum number of routes to store.
+   * When exceeded, oldest routes are evicted (LRU).
+   * Default: no limit (undefined).
+   */
+  maxRoutes?: number
+}
+
+/**
+ * In-memory state provider using Map storage with optional LRU eviction.
  *
  * Features:
  * - Zero network latency
  * - No external dependencies
  * - State lost on process restart
+ * - Optional LRU eviction for memory management
  *
  * Use cases:
  * - Single-node deployments
@@ -24,7 +37,12 @@ import type { PhysicsVector, StateProvider } from '../types.js'
 export class InMemoryProvider implements StateProvider {
   readonly name = 'InMemoryProvider'
   private readonly store: Map<string, PhysicsVector> = new Map()
+  private readonly maxRoutes: number | undefined
   private connected = false
+
+  constructor(options: InMemoryOptions = {}) {
+    this.maxRoutes = options.maxRoutes
+  }
 
   async connect(): Promise<void> {
     this.connected = true
@@ -36,10 +54,24 @@ export class InMemoryProvider implements StateProvider {
   }
 
   async getVector(routeId: string): Promise<PhysicsVector | null> {
-    return this.store.get(routeId) ?? null
+    const vector = this.store.get(routeId)
+    if (vector) {
+      // LRU: Move to end (most recently used)
+      this.store.delete(routeId)
+      this.store.set(routeId, vector)
+    }
+    return vector ?? null
   }
 
   async updateVector(routeId: string, vector: PhysicsVector): Promise<void> {
+    // LRU eviction if at capacity
+    if (this.maxRoutes && this.store.size >= this.maxRoutes && !this.store.has(routeId)) {
+      // Delete oldest (first in Map iteration order)
+      const oldestKey = this.store.keys().next().value
+      if (oldestKey) {
+        this.store.delete(oldestKey)
+      }
+    }
     this.store.set(routeId, vector)
   }
 
@@ -49,6 +81,13 @@ export class InMemoryProvider implements StateProvider {
 
   async listRoutes(): Promise<string[]> {
     return [...this.store.keys()]
+  }
+
+  /**
+   * Get current number of stored routes.
+   */
+  get size(): number {
+    return this.store.size
   }
 
   // No subscribe() - single process doesn't need push notifications
