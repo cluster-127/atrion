@@ -352,4 +352,59 @@ const agent = await swarm.spawnAgent('agent-1')
 
 ---
 
-**Status:** Awaiting Senior Architect review. 🌙
+**Status:** Endorsed ✅
+
+> _"Bu RFC, Atrion'u Akıllı bir Orkestratör yapıyor."_ — Senior Architect
+
+---
+
+## Appendix B: AbortController Pattern (Architect Recommendation)
+
+### Problem: Silent Failures
+
+If `lease.release()` is never called (e.g., process crash, infinite loop), the task continues consuming resources even after lease expires. This is a **resource leak**.
+
+### Solution: Mandatory AbortController
+
+```typescript
+// Task MUST provide an AbortController
+const controller = new AbortController()
+
+const lease = await atrion.startTask('ml/training', {
+  profile: 'EXTREME',
+  abortController: controller, // REQUIRED for HEAVY/EXTREME
+})
+
+// If lease expires without release, Atrion calls:
+// controller.abort()
+
+// Task code must respect abort signal
+async function runTraining(signal: AbortSignal) {
+  while (!signal.aborted) {
+    await trainNextBatch()
+  }
+  console.log('Training aborted by Atrion')
+}
+
+runTraining(controller.signal)
+```
+
+### Enforcement
+
+| Profile  | AbortController Required? |
+| -------- | ------------------------- |
+| LIGHT    | No                        |
+| STANDARD | No                        |
+| HEAVY    | **Yes**                   |
+| EXTREME  | **Yes**                   |
+
+### Behavior on Expiry
+
+```
+Lease expires →
+  1. Atrion calls controller.abort()
+  2. Scar accumulated = (overrun time / expected time) × scarFactor
+  3. Route marked unhealthy until recovery
+```
+
+This ensures Atrion has **active termination power**, not just passive observation.
