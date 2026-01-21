@@ -48,11 +48,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/laphilosophia/atrion.git"
+    "url": "git+https://github.com/cluster127/atrion.git"
   },
-  "homepage": "https://github.com/laphilosophia/atrion#readme",
+  "homepage": "https://github.com/cluster127/atrion#readme",
   "bugs": {
-    "url": "https://github.com/laphilosophia/atrion/issues"
+    "url": "https://github.com/cluster127/atrion/issues"
   },
   "engines": {
     "node": ">=18.0.0"
