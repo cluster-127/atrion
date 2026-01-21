@@ -6,6 +6,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] - 2026-01-21
+
+### Added: Pluggable State Architecture (RFC-0008)
+
+- **Atrion Class** (`src/atrion.ts`): New main entry point with simplified API
+  - `route()` method for admission control decisions
+  - `connect()`/`disconnect()` lifecycle management
+  - AutoTuner enabled by default
+
+- **StateProvider Interface** (`src/core/state/types.ts`)
+  - `PhysicsVector`: Minimal state vector (scar, momentumScalar, lastTick, resistance)
+  - `StateProvider`: Storage abstraction for physics state
+
+- **StateManager** (`src/core/state/manager.ts`)
+  - Local cache for fast reads (μs)
+  - Async provider sync (fire-and-forget)
+
+- **InMemoryProvider** (`src/core/state/providers/inmemory.ts`)
+  - Default provider for single-node deployments
+  - Zero dependencies
+
+- **RedisStateProvider** (`src/core/state/providers/redis.ts`)
+  - Basic pub/sub sync for multi-node clusters
+  - Last-Write-Wins conflict resolution
+  - Peer dependency: `ioredis`
+
+- **New Tests**: 27 additional tests (141 total)
+  - StateManager tests (15)
+  - Atrion class tests (12)
+
+### Changed
+
+- **README**: Updated with v2.0 API examples and provider table
+- **Exports**: Added new v2.0 exports while preserving v1.x compatibility
+
+---
+
 ## [1.2.1] - 2026-01-11
 
 ### Added: AutoTuner Physics Integration
@@ -27,24 +64,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added: Neuroplasticity & Wind Tunnel Expansion
 
 - **Circuit Breaker Recovery Fix** (`src/core/physics.ts`)
-
   - Resistance-based CB exit: R < 50Ω triggers recovery
   - Fixes hysteresis trap where CB never exited
 
 - **AutoTuner Module** (`src/core/auto-tuner.ts`)
-
   - EMA-based adaptive thresholds (RFC-0007)
   - Dynamic break point: μ + kσ
   - Hybrid limits: minFloor, hardCeiling
 
 - **RFC-0007: Adaptive Thresholds** (Neuroplasticity)
-
   - Mathematical formulation for dynamic thresholds
   - Z-Score interpretation (k=1,2,3)
   - Migration path: v1.2 opt-in → v2.0 default
 
 - **RFC-0008: Pluggable State Architecture** (renumbered from RFC-0007)
-
   - StateProvider interface for cluster sync
 
 - **Wind Tunnel Scenarios** (`lab/`)
@@ -66,13 +99,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added: Observability Patch (Operation First Flight)
 
 - **PhysicsObserver Interface** - Optional callback for real-time telemetry
-
   - `PhysicsEvent` type with all computed values (resistance, momentum, scar, mode)
   - `ObserverDecision` type: FLOW | SHED | BOOTSTRAP
   - Mode transition detection
 
 - **Built-in Observers** (`src/core/observers.ts`)
-
   - `consoleObserver` - Emoji-prefixed debug logging (✅/🚫/🔄)
   - `silentObserver` - No-op for benchmarking overhead
   - `createCompositeObserver()` - Fan-out to multiple observers
@@ -173,7 +204,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### Added
 
 - `src/core/logger.ts` - Injectable logger interface
-
   - `Logger` interface with debug/info/warn/error
   - `silentLogger` - no output (default)
   - `consoleLogger` - standard output
@@ -181,7 +211,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `getLogger()`/`setLogger()`/`resetLogger()` - global instance
 
 - `tests/unit/flow.test.ts` - 11 tests
-
   - decideFlow: PASS/REJECT/CIRCUIT_OPEN
   - selectRoute: softmax, filtering, edge cases
 
@@ -210,7 +239,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `vitest.config.ts` - Test configuration
 
 - `src/core/types.ts` - Domain types
-
   - Branded primitives: Timestamp, DeltaTime, Volts, Ohms, NormalizedPressure, Momentum, Scar
   - PressureVector, SensitivityWeights
   - State machine: BootstrapState, OperationalState, CircuitBreakerState
@@ -218,31 +246,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - FlowDecision
 
 - `src/core/vector.ts` - VectorMath utilities
-
   - magnitude, add, subtract, scale, divide
   - dot, scaleComponents (Hadamard), sum, clamp, zero
 
 - `src/core/clock.ts` - Time abstraction
-
   - Clock interface
   - VirtualClock (deterministic)
   - RealClock (production)
 
 - `src/core/normalize.ts` - Normalization
-
   - normalize() - tanh with guards
   - normalizeTelemetry() - PressureVector from raw metrics
   - isValidPressure(), isValidPressureVector()
 
 - `src/core/config.ts` - Configuration
-
   - DEFAULT_CONFIG, DEFAULT_SLO
   - deriveWeights() - SLO → sensitivity weights
   - deriveBaselines()
   - floatEquals(), EPSILON
 
 - `src/core/guards.ts` - 5 Edge Case Guards
-
   - isSafeNumber, toSafeNumber
   - safeClamp, safeDivide, safeExp, safeTanh
   - clampToZero, normalizeZero
@@ -250,7 +273,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - PhysicsGuard composite
 
 - `src/core/physics.ts` - Core physics
-
   - calculateMomentum()
   - updateScar()
   - calculateStaleness()
@@ -259,7 +281,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - updatePhysics()
 
 - `src/core/flow.ts` - Flow decision
-
   - decideFlow() - V > R gate
   - selectRoute() - softmax selection
   - createRequest()

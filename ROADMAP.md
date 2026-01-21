@@ -4,46 +4,36 @@
 
 ---
 
-## Current: v1.2.1 ✅
+## Current: v1.3.0 ✅
 
-**Neuroplasticity Release** (2026-01-11)
+**Pluggable State Architecture** (2026-01-21)
 
 - ✅ Core Physics Engine
 - ✅ Observer Pattern (telemetry)
 - ✅ AutoTuner Module (μ+kσ adaptive thresholds)
-- ✅ Circuit Breaker Recovery Fix
-- ✅ AtrionGuard Wrapper Class
-- ✅ 13 Wind Tunnel Scenarios
-- ✅ 114 Passing Tests
+- ✅ **Atrion Class** (new v2.0 API)
+- ✅ **StateProvider Interface** (RFC-0008)
+- ✅ **InMemoryProvider** (default)
+- ✅ **RedisStateProvider** (LWW sync)
+- ✅ 141 Passing Tests
 - ✅ npm Published
 
 ---
 
-## Next: v2.0.0 🚧
+## Next: v1.4.0 🚧
 
-**Pluggable State Architecture** (RFC-0008)
+**Observability & Developer Experience**
 
-### Phase 1: Core Interfaces
+### Phase 1: OpenTelemetry
 
-- [ ] `StateProvider` interface
-- [ ] `StateManager` class
-- [ ] `PhysicsVector` type
-
-### Phase 2: Providers
-
-- [ ] `InMemoryProvider` (default, free)
-- [ ] Backward compatibility layer
-
-### Phase 3: Atrion Class
-
-- [ ] Main `Atrion` entry point
-- [ ] Constructor with provider option
-- [ ] AutoTuner enabled by default
-
-### Phase 4: Observability
-
-- [ ] OpenTelemetry adapter
+- [ ] Trace adapter
 - [ ] Metrics export
+- [ ] Structured logging (JSON)
+
+### Phase 2: Migration Tools
+
+- [ ] v1.x deprecation warnings
+- [ ] Codemod for API migration
 
 ---
 
@@ -65,6 +55,7 @@
 
 | Version | Date       | Highlights                       |
 | ------- | ---------- | -------------------------------- |
+| v1.3.0  | 2026-01-21 | Pluggable State, Atrion Class    |
 | v1.2.1  | 2026-01-11 | AutoTuner physics integration    |
 | v1.2.0  | 2026-01-11 | Neuroplasticity, 6 new scenarios |
 | v1.1.0  | 2026-01-11 | Observer pattern                 |

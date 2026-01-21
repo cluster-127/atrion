@@ -3,9 +3,8 @@
 > Physics-based concurrency control for Node.js. Replaces static rate limits with Z-Score auto-tuning, deterministic backpressure, and priority-based load shedding.
 
 [![Atrion](.github/assets/banner.jpg)](https://github.com/laphilosophia/atrion)
-
 [![CI](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/laphilosophia/atrion/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-114%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-141%20passing-brightgreen)]()
 [![npm](https://img.shields.io/npm/v/atrion)](https://www.npmjs.com/package/atrion)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
@@ -125,17 +124,40 @@ The system calculates baseline latency (μ) and deviation (σ) in real-time. If 
 npm install atrion
 ```
 
+### v2.0 API (Recommended)
+
+```typescript
+import { Atrion } from 'atrion'
+
+const atrion = new Atrion()
+await atrion.connect()
+
+// Make routing decision
+const decision = atrion.route('api/checkout', {
+  latencyMs: 45,
+  errorRate: 0.01,
+  saturation: 0.3,
+})
+
+if (!decision.allow) {
+  return res.status(503).json({ error: decision.reason })
+}
+
+// decision.resistance = current Ω
+// decision.mode = 'BOOTSTRAP' | 'OPERATIONAL' | 'CIRCUIT_BREAKER'
+```
+
+### v1.x API (Still Supported)
+
 ```typescript
 import { AtrionGuard } from 'atrion'
 
 const guard = new AtrionGuard()
 
-// Before request
 if (!guard.canAccept('api/checkout')) {
   return res.status(503).json({ error: 'Service busy' })
 }
 
-// After request
 guard.reportOutcome('api/checkout', {
   latencyMs: 45,
   isError: false,
@@ -145,7 +167,26 @@ guard.reportOutcome('api/checkout', {
 
 ---
 
-## Key Features (v1.2.0)
+## Key Features (v2.0)
+
+### 🔌 Pluggable State Architecture (RFC-0008)
+
+Swappable state backends for different deployment scenarios:
+
+```typescript
+import { Atrion, InMemoryProvider } from 'atrion'
+
+const atrion = new Atrion({
+  provider: new InMemoryProvider(), // Default
+  autoTuner: true, // Adaptive thresholds
+})
+```
+
+| Provider             | Use Case                        |
+| -------------------- | ------------------------------- |
+| `InMemoryProvider`   | Single-node, development        |
+| `RedisStateProvider` | Multi-node cluster (basic sync) |
+| Atrion Cloud         | Smart sync, VIP Lanes, HotPatch |
 
 ### 🔮 Adaptive Thresholds (RFC-0007)
 
