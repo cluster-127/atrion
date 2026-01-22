@@ -2,10 +2,15 @@
 description: Atrion Agentic Rules Set (AARS) - Mandatory principles for CDO Physics Engine development
 ---
 
-# ATRION AGENTIC RULES SET (AARS) v1.0
+---
+
+## description: Atrion Agentic Rules Set (AARS) v1.1 - The Constitution of Cluster 127
+
+# ATRION AGENTIC RULES SET (AARS) v1.1
 
 **Target System:** Conditioned Deterministic Orchestration (CDO) Physics Engine
 **Enforcement Level:** STRICT / ZERO TOLERANCE
+**Last Incident:** v2.0.0-alpha Parity Failure (2026-01-22)
 
 ---
 
@@ -23,14 +28,13 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 
 ### 1.1 No Side Effects in Core
 
-- **Rule:** Files under `src/core/` MUST be **Pure Functions**. They map `(State, Input) -> NewState`.
+- **Rule:** Files under `src/core/` (and `atrion-physics/src/`) MUST be **Pure Functions**. They map `(State, Input) -> NewState`.
 - **Forbidden:**
-- Calling `Date.now()` or `new Date()`.
-- Generating random numbers (`Math.random()`).
-- Console logging (except via injected Logger interface).
-- Mutating arguments.
-
-- **Exception:** `src/core/guards.ts` may throw Errors or log warnings via dependency injection.
+  - Calling `Date.now()` or `new Date()`.
+  - Generating random numbers (`Math.random()`).
+  - Console logging (except via injected Logger interface).
+  - Mutating arguments.
+- **Statefulness:** If the TS core is functional (stateless per tick), the WASM core MUST offer a matching functional API. **Hidden internal state in WASM is forbidden.**
 
 ### 1.2 Immutability is Law
 
@@ -45,37 +49,37 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 ### 2.1 Primitive Obsession is Forbidden
 
 - **Rule:** Never use bare `number` for physical units in public interfaces.
-- **Requirement:** Use Branded Types (`Volts`, `Ohms`, `Momentum`).
+- **Requirement:** Use Branded Types (`Volts`, `Ohms`, `Momentum`) in both TS and Rust.
 - **Enforcement:**
-- ❌ `function calculateFlow(v: number, r: number)`
-- ✅ `function calculateFlow(v: Volts, r: Ohms)`
+  - ❌ `function calculateFlow(v: number, r: number)`
+  - ✅ `function calculateFlow(v: Volts, r: Ohms)`
 
 ### 2.2 Explicit State Transitions
 
 - **Rule:** State transitions must respect the Discriminated Union definition.
 - **Requirement:** Use TypeScript control flow analysis (narrowing) based on `mode`.
-- **Forbidden:** Accessing `state.momentum` without checking if `mode === 'OPERATIONAL'`.
 
 ---
 
-## 3. MATHEMATICAL HYGIENE
+## 3. MATHEMATICAL HYGIENE & LOGIC PARITY
 
 ### 3.1 The NaN/Infinity Zero Tolerance
 
 - **Rule:** Every mathematical operation involving division, logarithms, or exponents MUST be guarded.
-- **Requirement:** Wrap potentially dangerous ops with helpers from `src/core/guards.ts`.
-- **Sanitization:** Inputs from the "outside world" (telemetry) MUST be sanitized via `PhysicsGuard.sanitizeVector` before entering the core loop.
 
-### 3.2 Floating Point Determinism
+### 3.2 "Check Valve" Consistency
 
-- **Rule:** Never compare floating point numbers with `===`.
-- **Requirement:** Use `Math.abs(a - b) < EPSILON`.
-- **Normalize Zero:** `-0` MUST be normalized to `0` to prevent logging confusion.
+- **Rule:** **Silence is NOT Trauma.** Only positive pressure (exceeding baseline) contributes to Scar Tissue.
+- **Enforcement:** Any logic porting (TS -> Rust) must preserve this clamping behavior explicitly.
+  - TS: `Math.max(0, val)`
+  - Rust: `val.max(0.0)` or SIMD `_mm256_max_pd`
 
-### 3.3 Zero-Clamping (Zeno's Paradox)
+### 3.3 The Mirror Rule (Polyglot Consistency)
 
-- **Rule:** Values decaying asymptotically (e.g., Scar Tissue) MUST be clamped to strict 0 when they fall below `EPSILON`.
-- **Rationale:** Prevents denormalized number performance penalties and log pollution.
+- **Rule:** TypeScript is the **Reference Implementation (Source of Truth)**. Rust/WASM is the **Accelerator**.
+- **Constraint:** Logic changes MUST be implemented and verified in TS first.
+- **Forbidden:** Implementing "better" or "different" math in Rust without updating TS.
+- **Hard Fail:** If `TS_Output !== WASM_Output` (within EPSILON), the build **MUST FAIL**.
 
 ---
 
@@ -84,13 +88,7 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 ### 4.1 Time is an Input
 
 - **Rule:** The physics engine is strictly **Time-Agnostic**.
-- **Requirement:** `deltaT` and `staleness` are calculated by the _Shell_ (Simulation Runner) and passed as arguments to the _Core_.
-- **Constraint:** `deltaT` MUST be guaranteed positive (`> 0`). If `now < lastUpdated` (clock skew), treat `deltaT` as `minDeltaT`.
-
-### 4.2 Timestamp vs Duration
-
-- **Rule:** Strictly distinguish between `Timestamp` (Point in time) and `DeltaTime` (Duration).
-- **Violation:** Adding two Timestamps together (Semantically meaningless).
+- **Requirement:** `deltaT` is calculated by the _Shell_ and passed to the _Core_.
 
 ---
 
@@ -98,16 +96,21 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 
 ### 5.1 Invariants Over Examples
 
-- **Rule:** Unit tests are insufficient for physics. **Property-Based Tests** (`fast-check`) are mandatory for all core formulas.
-- **Required Invariants:**
-- `Resistance >= BaseResistance` (Always)
-- `Momentum(p, p) === 0` (Identity)
-- `Normalize(x) \in [-1, 1]` (Bounds)
+- **Rule:** Unit tests are insufficient. **Property-Based Tests** (`fast-check`) are mandatory.
 
 ### 5.2 Deterministic Simulation
 
 - **Rule:** Simulations MUST use `VirtualClock`.
-- **Requirement:** A test run with seed X must produce _identical_ charts byte-for-byte on every run.
+
+### 5.3 Differential Testing (The Parity Gate)
+
+- **Rule:** Every core physics function (`calculateResistance`, `updateScar`, `updateMomentum`) MUST have a corresponding Differential Test.
+- **Protocol:**
+  1. Generate random valid inputs (fuzzing).
+  2. Run through TS Engine.
+  3. Run through WASM Engine.
+  4. Assert `abs(TS - WASM) < EPSILON`.
+- **Trigger:** This test suite must run on every PR affecting `src/core` or `atrion-physics`.
 
 ---
 
@@ -116,8 +119,7 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 ### 6.1 RFC First
 
 - **Rule:** Code implements RFCs. Code does not define behavior.
-- **Workflow:** If implementation requires a logic change, update the RFC first, then the code.
-- **Traceability:** Complex functions MUST include a comment linking to the specific RFC section (e.g., `// See RFC-0002 §3.1`).
+- **Workflow:** Logic Change -> RFC Update -> TS Implementation -> Rust Port -> Parity Check.
 
 ---
 
@@ -129,11 +131,10 @@ Atrion is NOT a standard software library. It is a **Digital Physics Engine**.
 > **Your Constraints:**
 >
 > 1. You strictly follow the **Functional Core, Imperative Shell** pattern.
-> 2. You use **Branded Types** for all physical units; raw numbers are forbidden in signatures.
-> 3. You are paranoid about **NaN, Infinity, and floating-point errors**.
-> 4. You prefer **composition over inheritance**.
-> 5. You prioritize **mathematical correctness** over "clever" code.
+> 2. You use **Branded Types** for all physical units.
+> 3. You enforce **The Mirror Rule**: TS and Rust logic must be mathematically identical.
+> 4. You prioritize **mathematical correctness** over performance hacks.
+> 5. You demand **Differential Testing** for any multi-engine feature.
 >
-> **Current Context:** We are building the Atrion Physics Engine (MVS Phase).
-> **Objective:** Implement rigorous, scientifically accurate TypeScript code.
-> **Tone:** Professional, Concise, Technical, "Brutally Honest". Don't fluff. Just code and logic.
+> **Current Context:** We are hardening Atrion v2.0.
+> **Objective:** Ensure absolute consistency between TS Reference and Rust Accelerator.

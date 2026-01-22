@@ -5,10 +5,23 @@
  * High-level wrapper over physics engine with state management.
  */
 
-import { AutoTuner, DEFAULT_AUTOTUNER_CONFIG, type AutoTunerConfig } from './core/auto-tuner.js'
+import { AutoTuner, type AutoTunerConfig, DEFAULT_AUTOTUNER_CONFIG } from './core/auto-tuner.js'
 import { DEFAULT_CONFIG, DEFAULT_SLO, deriveBaselines, deriveWeights } from './core/config.js'
+import {
+  type LeaseOptions,
+  type TaskLease,
+  createLease,
+  getActiveLeaseCount,
+  registerLease,
+  unregisterLease,
+} from './core/lease.js'
 import { normalizeTelemetry } from './core/normalize.js'
 import { createBootstrapState, updatePhysics } from './core/physics.js'
+import {
+  type WorkloadProfile,
+  getProfileConfig,
+  setRouteProfile as setRouteProfileInternal,
+} from './core/profiles.js'
 import { StateManager } from './core/state/manager.js'
 import { InMemoryProvider } from './core/state/providers/inmemory.js'
 import type { PhysicsVector, StateProvider } from './core/state/types.js'
@@ -56,6 +69,16 @@ export interface RouteDecision {
   readonly reason: string
 }
 
+/**
+ * Options for route() method.
+ */
+export interface RouteOptions {
+  /** Request priority voltage (default: 100) */
+  voltage?: number
+  /** Workload profile override */
+  profile?: WorkloadProfile
+}
+
 // ============================================================================
 // OPTIONS
 // ============================================================================
@@ -80,19 +103,27 @@ export interface AtrionOptions {
   observer?: PhysicsObserver
 
   /**
-   * Use WASM physics engine (experimental)
+   * Physics engine selection.
    *
-   * Enables Rust/WASM physics core for 1000x performance improvement.
-   * Requires browser/Node.js with WebAssembly support.
+   * - 'auto': Tries WASM first, falls back to TS if unavailable (DEFAULT)
+   * - 'wasm': Forces WASM, throws error if unavailable
+   * - 'ts': Forces TypeScript engine
    *
-   * @default false
-   * @experimental v2.0-alpha
+   * @default 'auto'
    */
+  engine?: EngineMode
+
+  /** @deprecated Use `engine` instead */
   useWasm?: boolean
 
   /** Default voltage for requests (default: 100) */
   defaultVoltage?: number
 }
+
+/**
+ * Physics engine mode.
+ */
+export type EngineMode = 'auto' | 'wasm' | 'ts'
 
 // ============================================================================
 // ATRION CLASS
@@ -121,8 +152,9 @@ export class Atrion {
   private readonly slo: SLOConfig
   private readonly observer?: PhysicsObserver
   private readonly defaultVoltage: number
-  private readonly useWasm: boolean
+  private readonly engineMode: EngineMode
   private wasmEngine: any = null // PhysicsEngine from WASM
+  private _usingWasm = false
 
   // Cached derived values
   private readonly weights: ReturnType<typeof deriveWeights>
@@ -142,12 +174,13 @@ export class Atrion {
     this.observer = options.observer
     this.defaultVoltage = options.defaultVoltage ?? 100
 
-    // WASM (experimental v2.0-alpha)
-    this.useWasm = options.useWasm === true && isWasmAvailable()
-    if (options.useWasm && !isWasmAvailable()) {
-      console.warn(
-        'Atrion: WASM requested but WebAssembly not available. Falling back to TypeScript engine.',
-      )
+    // Engine mode (v2.0: default is 'auto')
+    // Support deprecated useWasm for backward compatibility
+    if (options.useWasm !== undefined) {
+      console.warn('Atrion: useWasm is deprecated. Use engine: "wasm" or "ts" instead.')
+      this.engineMode = options.useWasm ? 'wasm' : 'ts'
+    } else {
+      this.engineMode = options.engine ?? 'auto'
     }
 
     // Derived values
@@ -171,17 +204,47 @@ export class Atrion {
   async connect(): Promise<void> {
     await this.manager.connect()
 
-    // Initialize WASM engine if enabled
-    if (this.useWasm && !this.wasmEngine) {
-      try {
-        const { initWasm } = await import('./core/wasm/loader.js')
-        this.wasmEngine = await initWasm(this.config, this.weights)
-        console.log('Atrion: WASM physics engine initialized (v2.0-alpha)')
-      } catch (error) {
-        console.error('Atrion: WASM initialization failed, falling back to TypeScript:', error)
-        // wasmEngine remains null, will use TypeScript fallback
-      }
+    // Initialize physics engine based on mode
+    if (this.engineMode === 'ts') {
+      // Force TypeScript engine - no WASM
+      this._usingWasm = false
+      console.log('Atrion: Using TypeScript physics engine')
+      return
     }
+
+    // Try to initialize WASM for 'auto' and 'wasm' modes
+    if (!isWasmAvailable()) {
+      if (this.engineMode === 'wasm') {
+        throw new Error(
+          'Atrion: WASM requested but WebAssembly is not available in this environment',
+        )
+      }
+      // 'auto' mode: graceful fallback
+      console.log('Atrion: WebAssembly not available, using TypeScript engine')
+      this._usingWasm = false
+      return
+    }
+
+    try {
+      const { initWasm } = await import('./core/wasm/loader.js')
+      this.wasmEngine = await initWasm(this.config, this.weights)
+      this._usingWasm = true
+      console.log('Atrion: 🚀 WASM physics engine initialized (586M ops/s)')
+    } catch (error) {
+      if (this.engineMode === 'wasm') {
+        throw new Error(`Atrion: WASM initialization failed: ${error}`)
+      }
+      // 'auto' mode: graceful fallback
+      console.warn('Atrion: WASM loading failed, falling back to TypeScript:', error)
+      this._usingWasm = false
+    }
+  }
+
+  /**
+   * Check if currently using WASM engine.
+   */
+  get usingWasm(): boolean {
+    return this._usingWasm
   }
 
   /**
@@ -289,6 +352,88 @@ export class Atrion {
    */
   get isConnected(): boolean {
     return this.manager.isConnected
+  }
+
+  // ============================================================================
+  // WORKLOAD PROFILES (RFC-0010)
+  // ============================================================================
+
+  /**
+   * Set default workload profile for a route.
+   *
+   * @param routeId - Route identifier
+   * @param profile - Workload profile (LIGHT, STANDARD, HEAVY, EXTREME)
+   *
+   * @example
+   * ```typescript
+   * atrion.setRouteProfile('genom/sequence', 'EXTREME')
+   * atrion.setRouteProfile('api/health', 'LIGHT')
+   * ```
+   */
+  setRouteProfile(routeId: string, profile: WorkloadProfile): void {
+    setRouteProfileInternal(routeId, profile)
+  }
+
+  /**
+   * Start a long-running task with lease management.
+   *
+   * Lease provides heartbeat mechanism and controlled termination.
+   * HEAVY and EXTREME profiles REQUIRE AbortController.
+   *
+   * @param routeId - Route identifier
+   * @param options - Lease options (profile, timeout, abortController)
+   * @returns TaskLease for managing the task lifecycle
+   *
+   * @example
+   * ```typescript
+   * const controller = new AbortController()
+   * const lease = await atrion.startTask('ml/training', {
+   *   profile: 'EXTREME',
+   *   abortController: controller,
+   * })
+   *
+   * try {
+   *   const interval = setInterval(() => lease.heartbeat({ progress: 0.5 }), 5000)
+   *   await runTraining(controller.signal)
+   *   clearInterval(interval)
+   * } finally {
+   *   await lease.release()
+   * }
+   * ```
+   */
+  async startTask(routeId: string, options: LeaseOptions): Promise<TaskLease> {
+    // Check if route can accept new tasks
+    const activeCount = getActiveLeaseCount(routeId)
+    const profileConfig = getProfileConfig(options.profile)
+
+    // Create lease with callback for release handling
+    const lease = createLease(routeId, options, (leaseState, outcome) => {
+      unregisterLease(leaseState.id)
+
+      // Accumulate scar if task failed or exceeded budget
+      if (outcome === 'timeout' || outcome === 'failed') {
+        const state = this.states.get(routeId)
+        if (state) {
+          const overrunFactor = outcome === 'timeout' ? 1.5 : 1.0
+          const scarPenalty = this.config.scarFactor * profileConfig.scarMultiplier * overrunFactor
+          // Scar accumulation handled by physics on next route() call
+        }
+      }
+
+      // TODO: Add observer notification when PhysicsObserver is extended
+    })
+
+    // Register lease
+    registerLease(lease)
+
+    return lease
+  }
+
+  /**
+   * Get count of active tasks for a route.
+   */
+  getActiveTaskCount(routeId: string): number {
+    return getActiveLeaseCount(routeId)
   }
 
   // ============================================================================

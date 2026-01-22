@@ -104,7 +104,7 @@ mod tests {
     #[test]
     fn test_engine_creation() {
         let engine = PhysicsEngine::new();
-        assert_eq!(engine.config.base_resistance, 1.0);
+        assert_eq!(engine.config.base_resistance, 10.0);
     }
 
     #[test]

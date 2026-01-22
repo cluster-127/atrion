@@ -1,17 +1,18 @@
 /**
  * WASM Physics Engine Loader
  *
- * Lazy-loads and initializes the Rust/WASM physics engine.
+ * Loads and initializes the Rust/WASM physics engine.
+ * Uses static import for Node.js compatibility.
  */
 
 import type { PhysicsConfig, SensitivityWeights } from '../types.js'
 
-// Dynamic import type (loaded at runtime)
-type WasmModule = typeof import('../../../atrion-physics/pkg/atrion_physics.js')
-type PhysicsEngine = InstanceType<WasmModule['PhysicsEngine']>
-type PressureVector = InstanceType<WasmModule['PressureVector']>
+// Static import of WASM module (nodejs target)
+import * as wasmModule from '../../../atrion-physics/pkg/atrion_physics.js'
 
-let wasmModule: WasmModule | null = null
+type PhysicsEngine = InstanceType<typeof wasmModule.PhysicsEngine>
+type PressureVector = InstanceType<typeof wasmModule.PressureVector>
+
 let wasmEngine: PhysicsEngine | null = null
 
 /**
@@ -36,17 +37,8 @@ export async function initWasm(
   }
 
   try {
-    // Dynamic import WASM module
-    wasmModule = await import('../../../atrion-physics/pkg/atrion_physics.js')
-
     // Create engine instance
-    if (config && weights) {
-      // TODO: Pass config/weights once WASM supports it
-      wasmEngine = new wasmModule.PhysicsEngine()
-    } else {
-      wasmEngine = new wasmModule.PhysicsEngine()
-    }
-
+    wasmEngine = new wasmModule.PhysicsEngine()
     return wasmEngine
   } catch (error) {
     throw new Error(`Failed to initialize WASM: ${error}`)
@@ -71,9 +63,6 @@ export function createPressureVector(
   error: number,
   saturation: number,
 ): PressureVector {
-  if (!wasmModule) {
-    throw new Error('WASM module not loaded')
-  }
   return new wasmModule.PressureVector(latency, error, saturation)
 }
 

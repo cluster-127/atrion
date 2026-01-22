@@ -1,6 +1,6 @@
 # Atrion Examples
 
-Production-ready integration patterns for Atrion v1.1+.
+Production-ready integration patterns for Atrion v2.0+.
 
 ---
 
@@ -11,6 +11,8 @@ Production-ready integration patterns for Atrion v1.1+.
 | [wrapper-class.ts](./wrapper-class.ts)           | `AtrionGuard` class | Foundation for all integrations |
 | [express-middleware.ts](./express-middleware.ts) | Express middleware  | REST APIs with Express          |
 | [nestjs-interceptor.ts](./nestjs-interceptor.ts) | NestJS Interceptor  | Enterprise NestJS apps          |
+| [workload-profiles.ts](./workload-profiles.ts)   | **v2.0** Profiles   | Heterogeneous workloads         |
+| [long-running-task.ts](./long-running-task.ts)   | **v2.0** Lease API  | ML training, batch jobs         |
 
 ---
 

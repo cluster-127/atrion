@@ -1,6 +1,6 @@
 {
   "name": "atrion",
-  "version": "1.3.1",
+  "version": "2.0.0",
   "description": "Deterministic Physics Engine for Adaptive Traffic Orchestration",
   "type": "module",
   "main": "dist/index.js",
@@ -18,14 +18,22 @@
     "./simulation": {
       "types": "./dist/simulation/runner.d.ts",
       "import": "./dist/simulation/runner.js"
+    },
+    "./wasm": {
+      "types": "./atrion-physics/pkg/atrion_physics.d.ts",
+      "import": "./atrion-physics/pkg/atrion_physics.js"
     }
   },
   "files": [
     "dist",
+    "atrion-physics/pkg",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
+    "audit:arch": "depcruise src --config .dependency-cruiser.js",
+    "audit:code": "eslint src --ext .ts",
+    "prepare": "husky install",
     "build": "tsc",
     "build:wasm": "cd atrion-physics && wasm-pack build --target web --out-dir pkg",
     "test": "vitest run",
@@ -33,7 +41,13 @@
     "test:coverage": "vitest run --coverage",
     "simulate": "tsx src/simulation/index.ts",
     "stability-map": "tsx src/analysis/mapper.ts",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build:wasm && npm run build && npm test"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "depcruise --validate .dependency-cruiser.js"
+    ]
   },
   "keywords": [
     "fault-tolerance",
@@ -63,9 +77,13 @@
     "@types/ioredis": "^4.28.10",
     "@types/node": "^20.x",
     "axios": "^1.13.2",
+    "dependency-cruiser": "^17.3.6",
+    "eslint-plugin-functional": "^9.0.2",
     "express": "^5.2.1",
     "fast-check": "^3.x",
+    "husky": "^9.1.7",
     "ioredis": "^5.9.2",
+    "lint-staged": "^16.2.7",
     "tsx": "^4.x",
     "typescript": "^5.x",
     "vitest": "^1.x"

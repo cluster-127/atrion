@@ -92,6 +92,30 @@ pub fn dot_product(v: &PressureVector, weights: &SensitivityWeights) -> f64 {
     v.latency * weights.w_latency + v.error * weights.w_error + v.saturation * weights.w_saturation
 }
 
+/// Calculate positive stress magnitude (Check Valve Pattern)
+///
+/// CRITICAL: Only POSITIVE pressure causes trauma.
+/// Negative values (system healthy) are clamped to 0 BEFORE squaring.
+///
+/// This matches the TypeScript implementation:
+/// ```typescript
+/// const positiveStressMagnitude = Math.sqrt(
+///   Math.max(0, pressure.latency) ** 2 +
+///   Math.max(0, pressure.error) ** 2 +
+///   Math.max(0, pressure.saturation) ** 2,
+/// );
+/// ```
+///
+/// "Silence is not Trauma" - negative deviation (good performance)
+/// does NOT accumulate scar tissue.
+#[inline]
+pub fn positive_stress_magnitude(v: &PressureVector) -> f64 {
+    let lat = v.latency.max(0.0);
+    let err = v.error.max(0.0);
+    let sat = v.saturation.max(0.0);
+    (lat * lat + err * err + sat * sat).sqrt()
+}
+
 // ============================================================================
 // TESTS
 // ============================================================================

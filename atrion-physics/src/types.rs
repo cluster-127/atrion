@@ -3,7 +3,6 @@
  *
  * Uses "NewType" pattern for type safety (Zero-Cost Abstraction).
  */
-
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -43,7 +42,11 @@ pub struct PressureVector {
 impl PressureVector {
     #[wasm_bindgen(constructor)]
     pub fn new(latency: f64, error: f64, saturation: f64) -> Self {
-        Self { latency, error, saturation }
+        Self {
+            latency,
+            error,
+            saturation,
+        }
     }
 }
 
@@ -75,12 +78,13 @@ impl PhysicsConfig {
 impl Default for PhysicsConfig {
     fn default() -> Self {
         Self {
-            base_resistance: 1.0,
-            damping_factor: 0.5,
-            scar_factor: 10.0,
-            momentum_halflife: 5000.0,
-            bootstrap_ticks: 3,
-            break_threshold: 100.0,
+            // MUST match src/core/config.ts DEFAULT_CONFIG
+            base_resistance: 10.0,     // TS: 10
+            damping_factor: 20.0,      // TS: 20
+            scar_factor: 5.0,          // TS: 5
+            momentum_halflife: 5000.0, // Not in TS, kept as-is
+            bootstrap_ticks: 10,       // TS: 10
+            break_threshold: 100.0,    // TS: breakMultiplier * baseResistance = 10*10
             recovery_threshold: 50.0,
         }
     }
@@ -99,16 +103,24 @@ pub struct SensitivityWeights {
 impl SensitivityWeights {
     #[wasm_bindgen(constructor)]
     pub fn new(w_latency: f64, w_error: f64, w_saturation: f64) -> Self {
-        Self { w_latency, w_error, w_saturation }
+        Self {
+            w_latency,
+            w_error,
+            w_saturation,
+        }
     }
 }
 
 impl Default for SensitivityWeights {
     fn default() -> Self {
+        // MUST match deriveWeights(DEFAULT_SLO) from src/core/config.ts
+        // TS: wLatency = log(1 + 5) = log(6) ≈ 1.79
+        // TS: wError = log(1 + 8) = log(9) ≈ 2.20
+        // TS: wSaturation = log(1 + 3) = log(4) ≈ 1.39
         Self {
-            w_latency: 8.0,
-            w_error: 10.0,
-            w_saturation: 5.0,
+            w_latency: 1.791759469228055,     // ln(6)
+            w_error: 2.1972245773362196,      // ln(9)
+            w_saturation: 1.3862943611198906, // ln(4)
         }
     }
 }
