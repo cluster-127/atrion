@@ -4,7 +4,7 @@
 
 [![Atrion](.github/assets/banner.jpg)](https://github.com/cluster-127/atrion)
 [![CI](https://github.com/cluster-127/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/cluster-127/atrion/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-142%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-184%20passing-brightgreen)]()
 [![npm](https://img.shields.io/npm/v/atrion)](https://www.npmjs.com/package/atrion)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 

@@ -6,38 +6,61 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [2.0.0-alpha] - 2026-01-22
+## [2.0.0] - 2026-01-22
 
-### Added: Rust/WASM Physics Engine (RFC-0009)
+### 🚀 Major Release: WASM Default + Workload Profiles
 
-- **Rust Physics Core** (`atrion-physics/`)
-  - Branded types: `Ohms`, `Scar`, `Momentum`
-  - SIMD-optimized vector math (AVX2 + WASM SIMD128)
-  - Sub-nanosecond latency: **2.11ns** per calculation
-  - **586 Million ops/s** throughput
-  - 15 unit tests passing
+---
 
-- **WASM Compilation**
-  - `wasm-pack` build pipeline
-  - 13.2KB bundle size
-  - `lol_alloc` optimized allocator
+### RFC-0009: Rust/WASM Physics Engine
 
-- **TypeScript Integration**
-  - `useWasm` feature flag in `AtrionOptions`
-  - Lazy WASM loading in `connect()`
-  - Automatic fallback to TypeScript engine
+- **Performance**
+  - 586 Million ops/s throughput
+  - 2.11ns latency (1000x faster than TypeScript)
+  - SIMD: AVX2 (native) + SIMD128 (WASM)
 
-- **Build Scripts**
-  - `npm run build:wasm` for WASM compilation
-  - `scripts/build-wasm.sh` automation
+- **WASM Default Mode**
+  - `engine: 'auto'` (default) - tries WASM, falls back to TS
+  - `engine: 'wasm'` - force WASM, throws if unavailable
+  - `engine: 'ts'` - force TypeScript engine
+  - `useWasm` deprecated, backward compatible
 
-- **Differential Testing** (`tests/differential/`)
-  - TS vs WASM parity verification
+- **Check Valve Fix**
+  - `positive_stress_magnitude()` - clamps negative to 0 before squaring
+  - "Silence is not Trauma" principle enforced in both TS and WASM
+  - Full parity between engines verified by differential testing
 
-### Changed
+---
 
-- Test count: 141 → **142 passing**
-- Documentation updated for v2.0 roadmap
+### RFC-0010: Workload Profiles & Lease API
+
+- **Profile Types**
+  - `LIGHT`: 10ms baseline (health checks)
+  - `STANDARD`: 100ms baseline (REST APIs)
+  - `HEAVY`: 5s baseline (batch jobs) - requires AbortController
+  - `EXTREME`: 60s baseline (ML training) - requires AbortController
+
+- **Lease API**
+  - `atrion.startTask(routeId, options)` → TaskLease
+  - Heartbeat mechanism for long-running tasks
+  - Automatic lease expiration with AbortController
+
+- **Route Profiles**
+  - `atrion.setRouteProfile(routeId, profile)`
+  - Per-route baseline configuration
+
+---
+
+### Quality
+
+- **184/184 tests passing**
+- 9 differential parity tests (TS vs WASM)
+- 17/17 Rust unit tests
+- ESLint + Husky pre-commit hooks
+
+### Breaking Changes
+
+- `useWasm: boolean` → `engine: EngineMode` (deprecated, still works)
 
 ---
 

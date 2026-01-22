@@ -4,38 +4,43 @@
 
 ---
 
-## Current: v1.3.1 ✅
+## Current: v2.0.0 ✅
 
-**Pluggable State Architecture** (2026-01-21)
+**Major Release: WASM Default + Workload Profiles** (2026-01-22)
 
-- ✅ Core Physics Engine (RFC-0001-0004)
-- ✅ AutoTuner Module (RFC-0007)
-- ✅ Pluggable State Architecture (RFC-0008)
-- ✅ InMemoryProvider + RedisStateProvider
-- ✅ 141 Passing Tests
-- ✅ npm Published
-
----
-
-## Next: v2.0.0 🚧
-
-**Major Release: Performance + Workload Profiles**
-
-### RFC-0009: Rust/WASM Physics Engine
+### RFC-0009: Rust/WASM Physics Engine ✅
 
 - [x] Rust physics core (586M ops/s)
 - [x] WASM compilation (13.2KB bundle)
 - [x] SIMD optimization (AVX2 + WASM SIMD128)
-- [x] TypeScript integration (`useWasm` flag)
-- [x] Differential testing (TS/WASM parity)
+- [x] WASM default (`engine: 'auto'`)
+- [x] Check Valve parity fix
+- [x] Differential testing (9 parity tests)
 
-### RFC-0010: Workload Profiles
+### RFC-0010: Workload Profiles ✅
 
-- [ ] LIGHT, STANDARD, HEAVY, EXTREME profiles
-- [ ] Profile-aware pressure calculation
-- [ ] Lease API (`startTask`, `heartbeat`, `release`)
-- [ ] AbortController integration
-- [ ] AI Swarm support
+- [x] LIGHT, STANDARD, HEAVY, EXTREME profiles
+- [x] Profile-aware pressure calculation
+- [x] Lease API (`startTask`, `heartbeat`, `release`)
+- [x] AbortController integration
+- [x] `setRouteProfile()` API
+
+### Quality ✅
+
+- [x] 184 passing tests
+- [x] 17 Rust unit tests
+- [x] ESLint + Husky pre-commit
+
+---
+
+## Next: v2.1.0 🚧
+
+**AI Swarm & Advanced Profiles**
+
+- [ ] AI Swarm workload support
+- [ ] Dynamic profile switching
+- [ ] Profile telemetry & analytics
+- [ ] Dashboard prototype
 
 ---
 
@@ -58,6 +63,7 @@
 
 | Version | Date       | Highlights                       |
 | ------- | ---------- | -------------------------------- |
+| v2.0.0  | 2026-01-22 | WASM default, Workload Profiles  |
 | v1.3.1  | 2026-01-21 | Error hierarchy, LRU memory      |
 | v1.3.0  | 2026-01-21 | Pluggable State (RFC-0008)       |
 | v1.2.1  | 2026-01-11 | AutoTuner physics integration    |
