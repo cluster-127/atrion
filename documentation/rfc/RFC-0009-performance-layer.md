@@ -1,7 +1,7 @@
 # RFC-0009: Performance Layer Architecture
 
 **Status:** Endorsed ✅
-**Author:** Atrion Team
+**Author:** Erdem Arslan
 **Created:** 2026-01-21
 **Target:** v2.0+
 **Recommendation:** Skip Tier 1-2, proceed directly to **Tier 3 (Rust/WASM)**

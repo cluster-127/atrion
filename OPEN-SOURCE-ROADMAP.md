@@ -8,13 +8,13 @@
 
 **"Self-host the full engine. Scale with Atrion Cloud when ready."**
 
-Atrion follows the **Sentry/Datadog model**: the complete physics engine is open-source and self-hostable. Atrion Cloud provides managed infrastructure, enhanced observability, and enterprise features for teams that want operational convenience.
+Atrion follows the **Sentry/Datadog model**: the complete physics engine is open-source and self-hostable. Atrion Cloud provides managed infrastructure, enhanced observability, and enterprise features.
 
 ---
 
-## Current: v1.2.1 ✅
+## Current: v1.3.1 ✅
 
-**Neuroplasticity Release** (2026-01-11)
+**Pluggable State Architecture** (2026-01-21)
 
 ### Core Physics Engine
 
@@ -32,83 +32,46 @@ Atrion follows the **Sentry/Datadog model**: the complete physics engine is open
 | **Z-Score Thresholds** | `dynamicBreak = μ + kσ`                              |
 | **EMA Learning**       | Exponential moving average baseline                  |
 | **Hybrid Limits**      | `minFloor` + `hardCeiling` (Boiling Frog protection) |
-| **Shadow Mode**        | Continuous statistical learning                      |
 
-### Observability
+### Pluggable State (RFC-0008)
 
-| Feature                | Description                                     |
-| ---------------------- | ----------------------------------------------- |
-| **PhysicsObserver**    | Real-time telemetry callbacks                   |
-| **Built-in Observers** | console, silent, composite, filtered, collector |
-| **Mode Transitions**   | BOOTSTRAP → OPERATIONAL → CIRCUIT_OPEN          |
-| **Prometheus Metrics** | Standard metric export                          |
+| Provider               | Description              |
+| ---------------------- | ------------------------ |
+| **InMemoryProvider**   | Default, zero-dependency |
+| **RedisStateProvider** | Basic cluster sync       |
 
 ### Validation
 
-- ✅ 114 passing tests
+- ✅ 141 passing tests
 - ✅ 13 Wind Tunnel scenarios
-- ✅ 90.2% stability across 100 configurations
 - ✅ Flapping: 1 transition vs 49 (standard CB)
 
 ---
 
 ## Next: v2.0.0 🚧
 
-**Pluggable State Architecture** (RFC-0008)
+**Major Release: Performance + Workload Profiles**
 
-### Phase 1: Core Interfaces
+### RFC-0009: Rust/WASM Physics Engine ✅ (alpha)
 
-```typescript
-interface StateProvider {
-  get(routeId: string): PhysicsState | undefined
-  set(routeId: string, state: PhysicsState): void
-  delete(routeId: string): void
-  keys(): Iterable<string>
-}
-```
+| Feature                    | Status                                 |
+| -------------------------- | -------------------------------------- |
+| **586M ops/s**             | ✅ Sub-nanosecond physics calculations |
+| **2.11ns latency**         | ✅ 1000x faster than TypeScript        |
+| **SIMD**                   | ✅ AVX2 (native) + SIMD128 (WASM)      |
+| **13.2KB bundle**          | ✅ Minimal overhead                    |
+| **TypeScript integration** | ✅ `useWasm` feature flag              |
+| **Differential testing**   | ✅ TS/WASM parity verified             |
 
-- [ ] `StateProvider` interface
-- [ ] `StateManager` class
-- [ ] `PhysicsVector` type standardization
+### RFC-0010: Workload Profiles 🚧 (in progress)
 
-### Phase 2: Providers
-
-- [ ] `InMemoryProvider` (Map-based, zero-dependency)
-- [ ] `RedisStateProvider` (basic pub/sub sync)
-- [ ] Backward compatibility layer
-
-### Phase 3: Main Class Refactor
-
-- [ ] `Atrion` class as primary entry point
-- [ ] Constructor with `{ provider?: StateProvider }` option
-- [ ] AutoTuner enabled by default
-
-### Phase 4: Observability Enhancement
-
-- [ ] OpenTelemetry Trace adapter
-- [ ] OpenTelemetry Metrics adapter
-- [ ] Structured logging (JSON format)
-
----
-
-## Self-Hosted vs Cloud
-
-| Capability             | Self-Hosted (Free) | Atrion Cloud  |
-| ---------------------- | ------------------ | ------------- |
-| **Core Physics**       | ✅ Full            | ✅ Full       |
-| **AutoTuner**          | ✅ Full            | ✅ Full       |
-| **InMemoryProvider**   | ✅                 | ✅            |
-| **RedisStateProvider** | ✅ Basic sync      | ✅ Smart sync |
-| **Prometheus Metrics** | ✅                 | ✅            |
-| **Decision Dashboard** | ❌                 | ✅            |
-| **Gamma Blending**     | ❌                 | ✅            |
-| **VIP Lanes**          | ❌                 | ✅            |
-| **HotPatch**           | ❌                 | ✅            |
-| **GossipBan**          | ❌                 | ✅            |
-| **TrafficReplay**      | ❌                 | ✅            |
-| **Audit Logging**      | ❌                 | ✅            |
-| **SSO/SAML**           | ❌                 | ✅ Enterprise |
-| **SLA**                | ❌                 | ✅ Enterprise |
+| Feature                            | Status |
+| ---------------------------------- | ------ |
+| Profile Types (LIGHT → EXTREME)    | 🚧     |
+| Profile-aware pressure calculation | 🚧     |
+| Lease API                          | 🚧     |
+| AbortController integration        | 🚧     |
+| AI Swarm support                   | 🚧     |
 
 ---
 
@@ -117,48 +80,47 @@ interface StateProvider {
 ### Current (v1.x)
 
 ```typescript
-import { AtrionGuard } from 'atrion'
+import { Atrion } from 'atrion'
 
-const guard = new AtrionGuard({
-  config: { scarFactor: 5 },
-  autoTuner: true,
-})
+const atrion = new Atrion()
+await atrion.connect()
 
-if (!guard.canAccept('api/checkout')) {
-  return res.status(503).json({ error: 'Service busy' })
-}
-
-guard.reportOutcome('api/checkout', {
+const decision = atrion.route('api/checkout', {
   latencyMs: 45,
-  isError: false,
-  saturation: 0.3,
+  errorRate: 0.01,
 })
+
+if (!decision.allow) {
+  return res.status(503).json({ error: decision.reason })
+}
 ```
 
-### Planned (v2.x)
+### v2.0.0 (with WASM)
 
 ```typescript
-import { Atrion, InMemoryProvider } from 'atrion'
+import { Atrion } from 'atrion'
 
 const atrion = new Atrion({
-  provider: new InMemoryProvider(),
-  autoTuner: { k: 3, alpha: 0.1 },
+  useWasm: true, // 586M ops/s 🚀
 })
-
-const decision = atrion.route('api/checkout', telemetry)
+await atrion.connect()
 ```
 
-### With Redis (v2.x)
+---
 
-```typescript
-import { Atrion, RedisStateProvider } from 'atrion'
+## Self-Hosted vs Cloud
 
-const atrion = new Atrion({
-  provider: new RedisStateProvider({ url: 'redis://...' }),
-  // ⚠️ Basic sync only. For smart conflict resolution,
-  //    consider Atrion Cloud.
-})
-```
+| Capability             | Self-Hosted (Free) | Atrion Cloud  |
+| ---------------------- | ------------------ | ------------- |
+| **Core Physics**       | ✅ Full            | ✅ Full       |
+| **Rust/WASM**          | ✅ Full (v2.0+)    | ✅ Full       |
+| **AutoTuner**          | ✅ Full            | ✅ Full       |
+| **InMemoryProvider**   | ✅                 | ✅            |
+| **RedisStateProvider** | ✅ Basic sync      | ✅ Smart sync |
+| **Decision Dashboard** | ❌                 | ✅            |
+| **VIP Lanes**          | ❌                 | ✅            |
+| **HotPatch**           | ❌                 | ✅            |
+| **GossipBan**          | ❌                 | ✅            |
 
 ---
 
@@ -169,8 +131,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 ```bash
 npm install
 npm test
-npm run simulate
-npm run stability-map
+npm run build:wasm  # Build Rust/WASM (v2.0)
 ```
 
 ---

@@ -27,6 +27,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:wasm": "cd atrion-physics && wasm-pack build --target web --out-dir pkg",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

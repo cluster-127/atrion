@@ -1,0 +1,38 @@
+[package]
+name = "atrion-physics"
+version = "0.1.0"
+edition = "2021"
+authors = ["Erdem Arslan"]
+description = "High-performance physics engine for Atrion admission controller"
+license = "Apache-2.0"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false # Disable wasm-opt temporarily
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+# Optimized allocator for WASM (smaller binary)
+lol_alloc = "0.4"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[profile.release]
+opt-level = 3     # Maximum optimization
+lto = true        # Link-time optimization
+codegen-units = 1 # Single codegen unit for better optimization
+strip = true      # Strip debug symbols
+panic = "abort"   # Smaller binary (no unwinding)
+
+[profile.release.package."*"]
+opt-level = "z" # Optimize dependencies for size
+
+[[bench]]
+name = "physics_bench"
+harness = false

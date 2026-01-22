@@ -6,6 +6,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.0.0-alpha] - 2026-01-22
+
+### Added: Rust/WASM Physics Engine (RFC-0009)
+
+- **Rust Physics Core** (`atrion-physics/`)
+  - Branded types: `Ohms`, `Scar`, `Momentum`
+  - SIMD-optimized vector math (AVX2 + WASM SIMD128)
+  - Sub-nanosecond latency: **2.11ns** per calculation
+  - **586 Million ops/s** throughput
+  - 15 unit tests passing
+
+- **WASM Compilation**
+  - `wasm-pack` build pipeline
+  - 13.2KB bundle size
+  - `lol_alloc` optimized allocator
+
+- **TypeScript Integration**
+  - `useWasm` feature flag in `AtrionOptions`
+  - Lazy WASM loading in `connect()`
+  - Automatic fallback to TypeScript engine
+
+- **Build Scripts**
+  - `npm run build:wasm` for WASM compilation
+  - `scripts/build-wasm.sh` automation
+
+- **Differential Testing** (`tests/differential/`)
+  - TS vs WASM parity verification
+
+### Changed
+
+- Test count: 141 → **142 passing**
+- Documentation updated for v2.0 roadmap
+
+---
+
 ## [1.3.1] - 2026-01-21
 
 ### Added: Error Handling & Code Quality Improvements

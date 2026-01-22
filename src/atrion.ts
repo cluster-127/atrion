@@ -20,6 +20,7 @@ import type {
   SLOConfig,
   Timestamp,
 } from './core/types.js'
+import { isWasmAvailable } from './core/wasm/loader.js'
 
 // ============================================================================
 // TELEMETRY INPUT
@@ -78,6 +79,17 @@ export interface AtrionOptions {
   /** Observer for telemetry events */
   observer?: PhysicsObserver
 
+  /**
+   * Use WASM physics engine (experimental)
+   *
+   * Enables Rust/WASM physics core for 1000x performance improvement.
+   * Requires browser/Node.js with WebAssembly support.
+   *
+   * @default false
+   * @experimental v2.0-alpha
+   */
+  useWasm?: boolean
+
   /** Default voltage for requests (default: 100) */
   defaultVoltage?: number
 }
@@ -109,6 +121,8 @@ export class Atrion {
   private readonly slo: SLOConfig
   private readonly observer?: PhysicsObserver
   private readonly defaultVoltage: number
+  private readonly useWasm: boolean
+  private wasmEngine: any = null // PhysicsEngine from WASM
 
   // Cached derived values
   private readonly weights: ReturnType<typeof deriveWeights>
@@ -127,6 +141,14 @@ export class Atrion {
     this.slo = options.slo ?? DEFAULT_SLO
     this.observer = options.observer
     this.defaultVoltage = options.defaultVoltage ?? 100
+
+    // WASM (experimental v2.0-alpha)
+    this.useWasm = options.useWasm === true && isWasmAvailable()
+    if (options.useWasm && !isWasmAvailable()) {
+      console.warn(
+        'Atrion: WASM requested but WebAssembly not available. Falling back to TypeScript engine.',
+      )
+    }
 
     // Derived values
     this.weights = deriveWeights(this.slo)
@@ -148,6 +170,18 @@ export class Atrion {
    */
   async connect(): Promise<void> {
     await this.manager.connect()
+
+    // Initialize WASM engine if enabled
+    if (this.useWasm && !this.wasmEngine) {
+      try {
+        const { initWasm } = await import('./core/wasm/loader.js')
+        this.wasmEngine = await initWasm(this.config, this.weights)
+        console.log('Atrion: WASM physics engine initialized (v2.0-alpha)')
+      } catch (error) {
+        console.error('Atrion: WASM initialization failed, falling back to TypeScript:', error)
+        // wasmEngine remains null, will use TypeScript fallback
+      }
+    }
   }
 
   /**

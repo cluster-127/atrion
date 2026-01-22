@@ -4,50 +4,53 @@
 
 ---
 
-## Current: v1.3.0 ✅
+## Current: v1.3.1 ✅
 
 **Pluggable State Architecture** (2026-01-21)
 
-- ✅ Core Physics Engine
-- ✅ Observer Pattern (telemetry)
-- ✅ AutoTuner Module (μ+kσ adaptive thresholds)
-- ✅ **Atrion Class** (new v2.0 API)
-- ✅ **StateProvider Interface** (RFC-0008)
-- ✅ **InMemoryProvider** (default)
-- ✅ **RedisStateProvider** (LWW sync)
+- ✅ Core Physics Engine (RFC-0001-0004)
+- ✅ AutoTuner Module (RFC-0007)
+- ✅ Pluggable State Architecture (RFC-0008)
+- ✅ InMemoryProvider + RedisStateProvider
 - ✅ 141 Passing Tests
 - ✅ npm Published
 
 ---
 
-## Next: v1.4.0 🚧
+## Next: v2.0.0 🚧
 
-**Observability & Developer Experience**
+**Major Release: Performance + Workload Profiles**
 
-### Phase 1: OpenTelemetry
+### RFC-0009: Rust/WASM Physics Engine
 
-- [ ] Trace adapter
-- [ ] Metrics export
-- [ ] Structured logging (JSON)
+- [x] Rust physics core (586M ops/s)
+- [x] WASM compilation (13.2KB bundle)
+- [x] SIMD optimization (AVX2 + WASM SIMD128)
+- [x] TypeScript integration (`useWasm` flag)
+- [x] Differential testing (TS/WASM parity)
 
-### Phase 2: Migration Tools
+### RFC-0010: Workload Profiles
 
-- [ ] v1.x deprecation warnings
-- [ ] Codemod for API migration
+- [ ] LIGHT, STANDARD, HEAVY, EXTREME profiles
+- [ ] Profile-aware pressure calculation
+- [ ] Lease API (`startTask`, `heartbeat`, `release`)
+- [ ] AbortController integration
+- [ ] AI Swarm support
 
 ---
 
-## Future: v2.x+
+## Future: v3.x+
 
 ### Potential Features
 
-| Feature      | Priority | Description                   |
-| ------------ | -------- | ----------------------------- |
-| Multi-tenant | Medium   | Per-tenant state isolation    |
-| Prediction   | Medium   | ML-based threshold prediction |
-| Dashboard    | High     | Real-time visualization       |
-| Prometheus   | Medium   | Native metrics export         |
-| gRPC         | Low      | Alternative to HTTP           |
+| Feature       | Priority | Description                   |
+| ------------- | -------- | ----------------------------- |
+| Dashboard     | High     | Real-time visualization       |
+| Prometheus    | High     | Native metrics export         |
+| Multi-tenant  | Medium   | Per-tenant state isolation    |
+| Prediction    | Medium   | ML-based threshold prediction |
+| OpenTelemetry | Medium   | Trace + metrics adapters      |
+| gRPC          | Low      | Alternative to HTTP           |
 
 ---
 
@@ -55,7 +58,8 @@
 
 | Version | Date       | Highlights                       |
 | ------- | ---------- | -------------------------------- |
-| v1.3.0  | 2026-01-21 | Pluggable State, Atrion Class    |
+| v1.3.1  | 2026-01-21 | Error hierarchy, LRU memory      |
+| v1.3.0  | 2026-01-21 | Pluggable State (RFC-0008)       |
 | v1.2.1  | 2026-01-11 | AutoTuner physics integration    |
 | v1.2.0  | 2026-01-11 | Neuroplasticity, 6 new scenarios |
 | v1.1.0  | 2026-01-11 | Observer pattern                 |

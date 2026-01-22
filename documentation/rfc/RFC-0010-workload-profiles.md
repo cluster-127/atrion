@@ -1,7 +1,7 @@
 # RFC-0010: Workload Profiles & Long-Running Tasks
 
 **Status:** Draft
-**Author:** Atrion Team
+**Author:** Erdem Arslan
 **Created:** 2026-01-21
 **Target:** v2.1+
 
