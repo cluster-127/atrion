@@ -1,26 +1,18 @@
-# Atrion ⚡
+# Atrion
 
-> Physics-based concurrency control for Node.js. Replaces static rate limits with Z-Score auto-tuning, deterministic backpressure, and priority-based load shedding.
+> Physics-based concurrency control for Node.js. Replaces static rate limits with adaptive thresholds, deterministic backpressure, and priority-based load shedding.
 
 [![Atrion](.github/assets/banner.jpg)](https://github.com/cluster-127/atrion)
 [![CI](https://github.com/cluster-127/atrion/actions/workflows/ci.yml/badge.svg)](https://github.com/cluster-127/atrion/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-184%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-184%20passing-brightgreen)](https://github.com/cluster-127/atrion/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/atrion)](https://www.npmjs.com/package/atrion)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 ---
 
-## The Problem
+## Philosophy
 
-Traditional circuit breakers fail in three ways:
-
-| Problem               | Symptom                                                  |
-| --------------------- | -------------------------------------------------------- |
-| **Binary thinking**   | ON/OFF flapping during recovery                          |
-| **Static thresholds** | Night traffic triggers alerts, peak traffic gets blocked |
-| **No memory**         | Same route fails 100x, system keeps trying               |
-
-## The Solution: Physics
+> **"Don't forbid wrong behavior. Make it physically unsustainable."**
 
 Atrion models your system as an **electrical circuit**. Each route has _resistance_ that changes based on telemetry:
 
@@ -28,93 +20,30 @@ Atrion models your system as an **electrical circuit**. Each route has _resistan
 R(t) = R_base + Pressure + Momentum + ScarTissue
 ```
 
-| Component       | What it does                                         |
+| Component       | Description                                          |
 | --------------- | ---------------------------------------------------- |
 | **Pressure**    | Current load (latency, errors, saturation)           |
 | **Momentum**    | Rate of change (detects problems _before_ they peak) |
 | **Scar Tissue** | Historical trauma (remembers bad routes)             |
 
+This is **Conditioned Deterministic Orchestration (CDO)** — traffic routing as flow through impedance networks, where erroneous paths become physically inaccessible rather than explicitly forbidden.
+
 ---
 
-## Theory of Operation
+## The Problem
 
-> **Why physics instead of heuristics?**
+Traditional fault tolerance mechanisms fail in predictable ways:
 
-Traditional circuit breakers and rate limiters introduce complex behavior that often leads to complex failures. Atrion takes a different approach: instead of arbitrary static limits, we model traffic as a physical system with predictable, mathematically guaranteed behavior.
-
-### Mathematical Foundation
-
-Atrion is built on **Control Theory** principles (specifically PID-like feedback loops without integral windup) and **Fluid Dynamics**.
-
-```
-Traffic ≈ Fluid with Pressure, Resistance, and Momentum
-```
-
-The system ensures stability via a **Critical Damping** approach. We calculate a 'Scar Tissue' metric that accumulates based on failure severity and decays over time. This creates a _mathematically guaranteed hysteresis loop_, preventing the 'flapping' (rapid open/close) that plagues standard circuit breakers.
+| Mechanism       | Failure Mode                                            |
+| --------------- | ------------------------------------------------------- |
+| Circuit Breaker | Binary ON/OFF flapping during recovery                  |
+| Rate Limiting   | Static thresholds: night traffic triggers, peak blocked |
+| Retry Backoff   | Reactive, wastes resources on doomed requests           |
+| Health Checks   | Misses "zombie" services (alive but broken)             |
 
 ### Gray Failure Detection
 
-> "Dead services are easy. Zombie services are the killers."
-
-Standard health checks fail when a service is _technically alive but behaviorally broken_—responding slowly, returning garbage, or stuck in cleanup loops. Atrion doesn't just count requests; it measures **Service Resistance**.
-
-Consider this scenario:
-
-1. A processing node receives a complex request
-2. It takes longer than expected → upstream times out
-3. The cancellation triggers cleanup that also takes too long
-4. Meanwhile, upstream retries, but the node is still "cleaning up"
-5. Requests queue, the original gets resent, and... cascade failure
-
-A standard rate limiter fails here because RPS might be low, but **concurrency saturation is high**.
-
-Atrion detects this through:
-
-| Metric         | What It Catches                     |
-| -------------- | ----------------------------------- |
-| **Pressure**   | Current concurrency/latency stress  |
-| **Resistance** | Degraded responses (slow ≠ healthy) |
-| **Momentum**   | Rate of degradation (early warning) |
-
-Even if the node is responding (but slowly/wrongly), the resistance spikes. This triggers protective measures _before_ the cascade begins.
-
-### Momentum-Based Retry Storm Prevention
-
-The "stuck cleanup" scenario has another killer: retry storms. Atrion implements **Momentum-based throttling**:
-
-```
-If a node is stuck cleaning up, its 'momentum' remains high
-even if current RPS is zero.
-```
-
-This physically prevents upstream systems from dumping new retries into a node that hasn't "cooled down" yet, **regardless of timeout settings**. The physics model remembers recent stress even when instantaneous load looks normal.
-
-### Auto-Tuning: Eliminating Magic Numbers
-
-> "Idiots misconfiguring it" is a valid fear.
-
-That's why Atrion uses **Z-Score analysis** instead of hardcoded thresholds:
-
-```
-dynamicBreak = μ(R) + 3σ(R)
-```
-
-The system calculates baseline latency (μ) and deviation (σ) in real-time. If behavior falls outside 3σ, it clamps down. This removes the "magic number guessing" that leads to misconfiguration:
-
-| Scenario                          | Traditional               | Atrion                     |
-| --------------------------------- | ------------------------- | -------------------------- |
-| Night traffic (low volume)        | Fixed threshold too loose | Tight threshold (low μ)    |
-| Peak hours (high volume)          | Fixed threshold too tight | Relaxed threshold (high μ) |
-| New deployment (unknown baseline) | Guess and pray            | Learns within minutes      |
-
-### What This Means in Production
-
-| Failure Mode               | Traditional CB       | Atrion                  |
-| -------------------------- | -------------------- | ----------------------- |
-| Flapping during recovery   | 49+ transitions      | 1 transition            |
-| Zombie service detection   | Miss (still "alive") | Catch (high resistance) |
-| Retry storm amplification  | Passthrough          | Momentum blocks         |
-| Threshold misconfiguration | Silent failures      | Self-adjusting          |
+Standard health checks fail when a service is _technically alive but behaviorally broken_. Atrion measures **Service Resistance** — even if a node responds (but slowly or incorrectly), resistance spikes and triggers protective measures _before_ cascade begins.
 
 ---
 
@@ -124,7 +53,7 @@ The system calculates baseline latency (μ) and deviation (σ) in real-time. If 
 npm install atrion
 ```
 
-### v2.0 API (Recommended)
+### Basic Usage
 
 ```typescript
 import { Atrion } from 'atrion'
@@ -147,71 +76,90 @@ if (!decision.allow) {
 // decision.mode = 'BOOTSTRAP' | 'OPERATIONAL' | 'CIRCUIT_BREAKER'
 ```
 
-### v1.x API (Still Supported)
+### Workload Profiles
+
+Different baselines for different workloads — a 30-minute ML job should not trigger circuit breaker:
 
 ```typescript
-import { AtrionGuard } from 'atrion'
+// Short-lived API (default)
+atrion.route('api/users', telemetry)
 
-const guard = new AtrionGuard()
+// Heavy computation
+atrion.route('ml/inference', telemetry, { profile: 'HEAVY' })
 
-if (!guard.canAccept('api/checkout')) {
-  return res.status(503).json({ error: 'Service busy' })
-}
-
-guard.reportOutcome('api/checkout', {
-  latencyMs: 45,
-  isError: false,
-  saturation: 0.3,
+// Long-running task with lease
+const lease = await atrion.startTask('genom/sequence', {
+  profile: 'EXTREME',
+  abortController: controller, // Required for HEAVY/EXTREME
 })
+
+lease.heartbeat({ progress: 0.5 })
+await lease.release()
 ```
+
+| Profile    | Baseline Latency | Use Case                  |
+| ---------- | ---------------- | ------------------------- |
+| `LIGHT`    | 10ms             | Health checks, pings      |
+| `STANDARD` | 100ms            | REST APIs                 |
+| `HEAVY`    | 5s               | Video transcode, ML       |
+| `EXTREME`  | 60s              | Genome sequencing, Swarms |
 
 ---
 
-## Performance (v2.0-alpha) 🚀
+## Performance
 
 ### Rust/WASM Physics Engine
 
-Optional Rust-powered physics core for **1000x performance improvement**:
+Atrion v2.0 ships with an optional Rust-powered physics core compiled to WebAssembly:
 
 ```typescript
-import { Atrion } from 'atrion'
-
 const atrion = new Atrion({
-  useWasm: true, // Enable Rust/WASM engine (experimental)
+  engine: 'auto', // Default: tries WASM, falls back to TypeScript
+  // engine: 'wasm'  // Force WASM (throws if unavailable)
+  // engine: 'ts'    // Force TypeScript
 })
 ```
 
 #### Benchmark Results
 
-| Function              | TypeScript | Rust/WASM      | Speedup      |
+| Metric                | TypeScript | Rust/WASM      | Improvement  |
 | --------------------- | ---------- | -------------- | ------------ |
-| `calculateResistance` | ~50μs      | **2.11 ns**    | **~25,000x** |
-| Vector magnitude      | ~15μs      | **2.12 ns**    | **~7,000x**  |
-| Throughput            | ~20k ops/s | **586M ops/s** | **~29,000x** |
+| `calculateResistance` | ~50μs      | 2.11 ns        | ~25,000x     |
+| Throughput            | ~20k ops/s | 586M ops/s     | ~29,000x     |
+| GC Pauses             | Yes        | None           | Deterministic|
 
-**Rust Physics Core:**
+WASM bundle size: 13.2KB gzipped. SIMD support: AVX2 (native), SIMD128 (WASM).
 
-- Sub-nanosecond latencies
-- SIMD optimization (AVX2 + SIMD128)
-- Zero garbage collection
-- 13.2KB WASM bundle
-
-> See [RFC-0009](./documentation/rfc/RFC-0009-performance-layer.md) for technical details.
+See [RFC-0009](./documentation/rfc/RFC-0009-performance-layer.md) for technical details.
 
 ---
 
-## Key Features (v2.0)
+## Key Features
 
-### 🔌 Pluggable State Architecture (RFC-0008)
+### Adaptive Thresholds
 
-Swappable state backends for different deployment scenarios:
+Atrion eliminates manual threshold configuration through Z-Score based auto-tuning:
+
+```
+dynamicBreak = μ(R) + 3σ(R)
+```
+
+| Scenario         | Static Thresholds     | Atrion                   |
+| ---------------- | --------------------- | ------------------------ |
+| Low traffic      | Threshold too loose   | Tight threshold (low μ)  |
+| Peak traffic     | Threshold too tight   | Relaxed threshold (high μ)|
+| New deployment   | Manual configuration  | Learns within minutes    |
+
+### Pluggable State Architecture
+
+Swappable backends for different deployment scenarios:
 
 ```typescript
-import { Atrion, InMemoryProvider } from 'atrion'
+import { Atrion, InMemoryProvider, RedisStateProvider } from 'atrion'
 
 const atrion = new Atrion({
-  provider: new InMemoryProvider(), // Default
-  autoTuner: true, // Adaptive thresholds
+  provider: new InMemoryProvider(), // Default: single-node
+  // provider: new RedisStateProvider(redis) // Multi-node cluster
 })
 ```
 
@@ -219,70 +167,57 @@ const atrion = new Atrion({
 | -------------------- | ------------------------------- |
 | `InMemoryProvider`   | Single-node, development        |
 | `RedisStateProvider` | Multi-node cluster (basic sync) |
-| Atrion Cloud         | Smart sync, VIP Lanes, HotPatch |
 
-### 🔮 Adaptive Thresholds (RFC-0007)
+### Priority Load Shedding
 
-No more manual tuning. Atrion learns your baseline:
-
-```
-dynamicBreak = μ(R) + 3σ(R)
-```
-
-Night traffic (low μ) → tight threshold. Peak hours (high μ) → relaxed threshold.
-
-### 🛡️ Priority Load Shedding
-
-Different SLOs for different routes. Protect checkout, shed search:
+Configure different SLOs per route. Protect revenue-critical paths while shedding non-essential traffic:
 
 ```typescript
-const checkoutGuard = new AtrionGuard({
-  config: { scarFactor: 2 }, // Stubborn VIP
-})
-
-const searchGuard = new AtrionGuard({
-  config: { scarFactor: 20 }, // Expendable
-})
+atrion.setRouteProfile('api/checkout', { scarFactor: 2 })  // High priority
+atrion.setRouteProfile('api/search', { scarFactor: 20 })   // Lower priority
 ```
 
-**Result:** 84% revenue efficiency during Black Friday stress test.
+Validated result: 84% revenue efficiency during Black Friday stress simulation.
 
-### 🔌 Circuit Breaker That Heals
+### Self-Healing Circuit Breaker
 
-Standard CB stays open until timeout. Atrion exits when resistance drops:
+Standard circuit breakers remain open until timeout. Atrion exits circuit breaker state automatically when resistance drops below threshold:
 
 ```
-R < 50Ω → Exit CB automatically
+R < 50Ω → Exit circuit breaker
 ```
 
 ---
 
 ## Validated Results
 
-| Test              | Metric                      | Result                |
-| ----------------- | --------------------------- | --------------------- |
-| Flapping          | Transitions during recovery | 1 vs 49 (standard CB) |
-| LOD Degradation   | Time to quality switch      | 41 ticks (was 91)     |
-| CB Recovery       | Exit from circuit breaker   | ✅ at R=49.7Ω         |
-| Priority Shedding | Revenue protected           | 84% efficiency        |
+| Test              | Metric                    | Result                |
+| ----------------- | ------------------------- | --------------------- |
+| Flapping          | Transitions during stress | 1 vs 49 (standard CB) |
+| Gray Failure      | Zombie detection          | Detected via R spike  |
+| CB Recovery       | Exit from circuit breaker | At R=49.7Ω            |
+| Priority Shedding | Revenue protected         | 84% efficiency        |
+| WASM Parity       | TS vs Rust differential   | 9/9 tests passing     |
 
 ---
 
 ## Documentation
 
-| RFC                                                                      | Topic               |
-| ------------------------------------------------------------------------ | ------------------- |
-| [RFC-0001](./documentation/rfc/RFC-0001-core-mathematical-model.md)      | Core Math Model     |
-| [RFC-0007](./documentation/rfc/RFC-0007-adaptive-thresholds.md)          | Adaptive Thresholds |
-| [RFC-0008](./documentation/rfc/RFC-0008-pluggable-state-architecture.md) | Pluggable State     |
+| RFC                                                                      | Topic                   | Status      |
+| ------------------------------------------------------------------------ | ----------------------- | ----------- |
+| [RFC-0001](./documentation/rfc/RFC-0001-core-mathematical-model.md)      | Core Mathematical Model | Implemented |
+| [RFC-0007](./documentation/rfc/RFC-0007-adaptive-thresholds.md)          | Adaptive Thresholds     | Implemented |
+| [RFC-0008](./documentation/rfc/RFC-0008-pluggable-state-architecture.md) | Pluggable State         | Implemented |
+| [RFC-0009](./documentation/rfc/RFC-0009-performance-layer.md)            | Rust/WASM Performance   | Implemented |
+| [RFC-0010](./documentation/rfc/RFC-0010-workload-profiles.md)            | Workload Profiles       | Implemented |
 
-Full index: [documentation/rfc/README.md](./documentation/rfc/README.md)
+Full RFC index: [documentation/rfc/README.md](./documentation/rfc/README.md)
 
 ---
 
-## Wind Tunnel (Lab)
+## Wind Tunnel
 
-Real-world scenario simulations:
+Real-world scenario simulations in the `lab/` directory:
 
 ```bash
 # E-Commerce: VIP priority during DB stress
@@ -297,6 +232,22 @@ npx tsx lab/cb-recovery/recovery-client.ts
 See [lab/README.md](./lab/README.md) for all scenarios.
 
 ---
+
+## Roadmap
+
+| Version | Status      | Highlights                      |
+| ------- | ----------- | ------------------------------- |
+| v2.0.0  | Released    | WASM default, Workload Profiles |
+| v2.1.0  | In Progress | AI Swarm, Dynamic Profiles      |
+| v3.x    | Planned     | Dashboard, Prometheus, OpenTel  |
+
+See [ROADMAP.md](./ROADMAP.md) for details.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ## License
 
